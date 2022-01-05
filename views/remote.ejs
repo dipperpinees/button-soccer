@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<link rel="stylesheet" href="/styles/common.css">
+<link rel="stylesheet" href="/styles/remote.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+    <title>Remote</title>
+</head>
+<body>
+    <div class="gamepad">
+        <button id='up' class="bi-caret-up-fill"> </button>
+        <button id='down' class="bi-caret-down-fill"> </button>
+        <button id='right' class="bi-caret-right-fill"> </button>
+        <button id='left' class="bi-caret-left-fill"> </button>
+    </div>
+    <i class="bi bi-fullscreen fullscreen"></i>
+
+</body>
+<script src="https://cdn.socket.io/4.4.0/socket.io.min.js" integrity="sha384-1fOn6VtTq3PWwfsOrk45LnYcGosJwzMHv+Xh/Jx5303FVOXzEnw0EpLv30mtjmlj" crossorigin="anonymous"></script>
+<script>
+    const params = (new URL(document.location)).searchParams;
+    const username = params.get('name'); 
+    const password = params.get('password');
+    const roomId = params.get('roomId');
+    $ = document.querySelector.bind(document)
+    $$ = document.querySelectorAll.bind(document)
+    $(".fullscreen").onclick = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        }
+
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+    const socket = io({
+        query: {type: "join", name: username, password: password, roomId: roomId}
+    });
+
+    // socket.on('join', (args) => {
+    //     if(args === 'error') window.location.href="/";
+    // })
+</script>
+<script src="/js/remote.js"></script>
+</html>

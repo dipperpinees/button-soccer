@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<link rel="stylesheet" href="/styles/common.css">
+<link rel="stylesheet" href="/styles/join.css">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Document</title>
+
+</head>
+<body id='body'>
+
+    <form id='form'>
+        <input type="text" name="roomid" placeholder="Room Id" required>
+        <input type="text" name="name" placeholder="Name" required>
+        <input type="password" name="password" placeholder="Password" >
+        <button type='submit'>JOIN</button>
+    </form>
+</body>
+<script>
+    const form = document.getElementById('form');
+    form.onsubmit = (e) => {
+        e.preventDefault();
+        const roomId = form.elements["roomid"].value;
+        const name = form.elements["name"].value;
+        const password = form.elements["password"].value;
+        fetch(`/room?roomId=${roomId}&name=${name}&password=${password}`, {
+            method: "POST",
+        }).then(res => {
+            return res.json();
+        }).then(res => {
+            if(res.type === 'error') {
+                alert(res.message);
+            } else {
+                window.location.href = `/remote?roomId=${roomId}&name=${name}&password=${password}`;
+            }
+        }).catch(err => {
+            console.log(err);
+        })
+        // window.location.href = `/remote?roomid=${roomId}&name=${name}&password=${password}`;
+    }
+</script>
+</html>
