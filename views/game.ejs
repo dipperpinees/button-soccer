@@ -6,6 +6,8 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Document</title>
 </head>
 <body id='body'>
@@ -14,54 +16,64 @@
     <div class='wait'>
         <div class='blueteam'>
             <h4>Blue Team</h4>
-            <ul class="listplayer">
-                <li class="player">
-                    <img src="/img/bluemessi.png" alt="player">
-                    <p>Hiệp gà</p>
-                </li>
+            <ul class="listplayer listplayer-blue">
             </ul>
         </div>
         <div class='settings'>
             <h3 class='settings-roomid'>100001</h3>
-            <ul class='settings-ball'>
-                <li class='ball-choose' src="/img/ball1.png">
-                    <img src="/img/ball1.png" alt="">
-                </li>
-                <li src="/img/ball2.png">
-                    <img src="/img/ball2.png" alt="">
-                </li>
-                <li src="/img/ball3.png">
-                    <img src="/img/ball3.png" alt="">
-                </li>
-                <li src="/img/ball4.png">
-                    <img src="/img/ball4.png" alt="">
-                </li>
-                <li src="/img/ball5.png">
-                    <img src="/img/ball5.png" alt="">
-                </li>
-                <li src="/img/ball6.png">
-                    <img src="/img/ball6.png" alt="">
-                </li>
-                <li src="/img/ball7.png">
-                    <img src="/img/ball7.png" alt="">
-                </li>
-            </ul>
-            <ul class='settings-time'>
-                <li time="3">3m</li>
-                <li class='time-choose' time="6">6m</li>
-                <li time="8">8m</li>
-                <li time="10">10m</li>
-                <li time="15">15m</li>
-            </ul>
-            <button class='settings-start'>Start</button>
+            <div class="lastmatch">
+                <h5>Last Match</h5>
+                <div class="lastmatch-detail">
+                    <div>
+                        <h4 style="color: #0793d1">Blue Team</h4>
+                        <div class="lastmatch-detail-score blue-detail">
+                        </div>
+                    </div>
+                    <p></p>
+                    <div>
+                        <h4 style="color: #ed1818">Red Team</h4>
+                        <div class="lastmatch-detail-score red-detail">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <ul class='settings-ball'>
+                    <li class='ball-choose' src="/img/ball1.png">
+                        <img src="/img/ball1.png" alt="">
+                    </li>
+                    <li src="/img/ball2.png">
+                        <img src="/img/ball2.png" alt="">
+                    </li>
+                    <li src="/img/ball3.png">
+                        <img src="/img/ball3.png" alt="">
+                    </li>
+                    <li src="/img/ball4.png">
+                        <img src="/img/ball4.png" alt="">
+                    </li>
+                    <li src="/img/ball5.png">
+                        <img src="/img/ball5.png" alt="">
+                    </li>
+                    <li src="/img/ball6.png">
+                        <img src="/img/ball6.png" alt="">
+                    </li>
+                    <li src="/img/ball7.png">
+                        <img src="/img/ball7.png" alt="">
+                    </li>
+                </ul>
+                <ul class='settings-time'>
+                    <li time="3">3m</li>
+                    <li class='time-choose' time="6">6m</li>
+                    <li time="8">8m</li>
+                    <li time="10">10m</li>
+                    <li time="15">15m</li>
+                </ul>
+                <button class='settings-start'>Start</button>
+            </div>
         </div>
         <div class='redteam'>
             <h4>Red Team</h4>
-            <ul class="listplayer">
-                <li class="player">
-                    <img src="/img/redmessi.png" alt="player">
-                    <p>Hiệp gà</p>
-                </li>
+            <ul class="listplayer listplayer-red">
             </ul>
         </div>
     </div>
@@ -75,71 +87,9 @@
         </span>
         <div class="scoreboard-red">0</div>
     </div> -->
-    <i class="bi bi-fullscreen fullscreen"></i>
+    <!-- <i class="bi bi-fullscreen fullscreen"></i> -->
 </body>
 <script src="https://unpkg.com/kaboom/dist/kaboom.js"></script>
 <script src="https://cdn.socket.io/4.4.0/socket.io.min.js" integrity="sha384-1fOn6VtTq3PWwfsOrk45LnYcGosJwzMHv+Xh/Jx5303FVOXzEnw0EpLv30mtjmlj" crossorigin="anonymous"></script>
 <script src="/js/game.js"></script>
-<script>
-    $ = document.querySelector.bind(document)
-    $$ = document.querySelectorAll.bind(document)
-    const socket = io({query: {type: 'create'}});
-    const listBall = $$(".settings-ball li");
-    const listTime = $$(".settings-time li");
-    let ballSrc = "/img/ball1.png";
-    let time = 6;
-    const listPlayer = [
-        {name: "test player 1", socketId: "1", player: "ronaldo", team: "blue"},
-        {name: "test player 2", socketId: "2", player: "messi", team: "blue"},
-        {name: "test player 3", socketId: "3", player: "quanghai", team: "blue"},
-        {name: "test player 4", socketId: "4", player: "neymar", team: "blue"},
-        {name: "test player 5", socketId: "5", player: "lukaku", team: "blue"},
-        {name: "test player 6", socketId: "6", player: "kante", team: "blue"},
-        {name: "test player 7", socketId: "7", player: "messi", team: "red"},
-        {name: "test player 8", socketId: "8", player: "mbappe", team: "red"},
-        {name: "test player 9", socketId: "9", player: "congphuong", team: "red"},
-        {name: "test player 10", socketId: "10", player: "quanghai", team: "red"},
-        {name: "test player 11", socketId: "11", player: "tuananh", team: "red"},
-        {name: "test player 12", socketId: "12", player: "haaland", team: "red"},
-    ];
-
-    for(let i = 0; i<listBall.length; i++) {
-        listBall[i].onclick = (e) => {
-            $(".ball-choose").classList.remove("ball-choose");
-            listBall[i].classList.add("ball-choose");
-            ballSrc = listBall[i].getAttribute("src");
-        }
-    }
-    for(let i = 0; i<listTime.length; i++) {
-        listTime[i].onclick = (e) => {
-            $(".time-choose").classList.remove("time-choose");
-            listTime[i].classList.add("time-choose");
-            time = Number(listTime[i].getAttribute("time"));
-        }
-    }
-
-    socket.on("create", ({roomId}) => {
-        $(".settings-roomid").textContent = `Room Id: ${roomId}`
-    })
-
-    $(".settings-start").onclick = () => {
-        $(".wait").style.display = 'none'; 
-        // $(".scoreboard").style.display = 'flex';
-        // setInterval(() => {
-        //     if(time > 0) {
-        //         --time;
-        //         let minute = Math.floor(time/60);
-        //         let second = time%60;
-        //         if(minute < 10) {
-        //             minute = "0" + minute;
-        //         }
-        //         if(second < 10) {
-        //             second = "0" + second;
-        //         }
-        //         $(".scoreboard-time").textContent = `${minute}:${second}`;
-        //     }
-        // }, 1000)
-        game(ballSrc, listPlayer, time);
-    }
-</script>
 </html>

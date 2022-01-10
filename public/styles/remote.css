@@ -7,6 +7,10 @@ html {
     user-select: none;
 }
 
+body {
+    touch-action: pan-x pan-y;
+}
+
 .center {
     top: 50%!important;
     left: 50%!important;
@@ -23,12 +27,10 @@ body {
     position: relative;
     width: 400px;
     height: 250px;
-    /* left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);  */
+    display: none;
 }
 
-button {
+.gamepad button {
     font-size: 32px;
     display: flex;
     align-items: center;
@@ -76,4 +78,64 @@ button {
     top: 4px;
     left: 8px;
     font-size: 24px;
+}
+
+.waiting {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.waiting button {
+    margin: 16px;
+    width: 140px;
+    font-size: 16px;
+}
+
+.waiting-choose {
+    position: relative;
+}
+
+.waiting-choose > img {
+    width: 140px;
+    height: 140px;
+    margin-top: 32px;
+}
+
+.waiting-choose > img:hover {
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.waiting-choose-toggle {
+    width: 168px;
+    background-color: white;
+    align-items: center;
+    flex-wrap: wrap;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    border-bottom-right-radius: 16px;
+    position: absolute;
+    bottom: 144px;
+    padding: 4px;
+    left: 68px;
+    display: none;
+}
+
+.waiting-choose-toggle img {
+    width: 40px;
+    height: 40px;
+    padding: 4px;
+}
+
+.sharelink {
+    position: fixed;
+    top: 4px;
+    right: 12px;
+    font-size: 30px;
+}
+
+.sharelink:hover {
+    opacity: 0.8;
 }

@@ -19,9 +19,6 @@ app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const roomList = {'100001': {password: '100001'}};
-let maxRoomId = 99999;
-
 app.get("/", (req, res) => {
     res.render("home")
 })
@@ -44,43 +41,101 @@ app.post("/room", (req, res) => {
     if(type === "error") {
         res.status(400).json({type, message});
     } else {
-        res.status(400).json({type: 'succcess'});
+        res.json({type: 'succcess'});
     }
 })
 
+const roomList = {};
+let maxRoomId = 99999;
+const listPlayer = {};
+const listMaster = {};
+
 io.on('connection', async (socket) => {
-    console.log('new user connected')
+    console.log('new user connected');
     const {type, roomId, name, password} = socket.handshake.query;
+
     if(type === 'join') {
-        if(auth(roomId, password).type === 'error') {
-            socket.emit('join', 'error');
+        const {type, messsage} = auth(roomId, password);
+        if(type === 'error') {
+            socket.emit('join', {type, messsage});
         } else {
-            socket.emit('join', 'success');
-            io.to(roomList[roomId].masterId).emit("join", {name})
+            socket.join(roomId);
+            listPlayer[socket.id] = {roomId: roomId};
+            if(roomList[roomId].countBlue <= roomList[roomId].countRed) {
+                socket.emit('join', {type: 'success', team: 'blue'});
+                const currentPlayer = {socketId: socket.id, name: name, player: 'default', team:'blue'};
+                io.to(roomList[roomId].masterId).emit("join", currentPlayer);
+                roomList[roomId].listPlayer.push(currentPlayer);
+                listPlayer[socket.id]["obj"] = currentPlayer;
+                ++roomList[roomId].countBlue;
+            } else {
+                socket.emit('join', {type: 'success', team: 'red'});
+                const currentPlayer = {socketId: socket.id, name: name, player: 'default', team:'red'};
+                io.to(roomList[roomId].masterId).emit("join", currentPlayer); 
+                roomList[roomId].listPlayer.push(currentPlayer);
+                listPlayer[socket.id]["obj"] = currentPlayer;
+                ++roomList[roomId].countRed;
+            }
         }
     }
 
     if(type === 'create') {
-        console.log('create');
-        roomList[++maxRoomId] = {masterId: socket.id, listPlayer: []};
-        socket.emit('create', {roomId: maxRoomId});
+        roomList[ (++maxRoomId).toString()] = {masterId: socket.id, listPlayer: [], countBlue: 0, countRed: 0, isPlayed: false};
+        socket.emit('create', {roomId: maxRoomId.toString()});
+        listMaster[socket.id] = maxRoomId.toString();
     }
 
-    socket.on('move', (args) => {
-        io.emit('move', args)
+    socket.on('move', (args) => {   
+        io.to(roomList[listPlayer[socket.id].roomId].masterId).emit("move", {socketId: socket.id, move: args});
+    })
+
+    socket.on('player', (args) => {
+        io.to(roomList[listPlayer[socket.id].roomId].masterId).emit("player", {socketId: socket.id, player: args, team: listPlayer[socket.id].obj.team});
+        listPlayer[socket.id].obj.player = args;
+    } )
+
+    socket.on('changeteam', (args) => {
+        const roomId = listPlayer[socket.id].roomId;
+        if(listPlayer[socket.id].obj.team === 'blue') {
+            ++roomList[roomId].countRed;
+            --roomList[roomId].countBlue;
+            listPlayer[socket.id].obj.team = 'red';
+        } else {
+            ++roomList[roomId].countBlue;
+            --roomList[roomId].countRed;
+            listPlayer[socket.id].obj.team = 'blue';
+        }
+        io.to(roomList[roomId].masterId).emit("changeteam", listPlayer[socket.id].obj);
+    })
+
+    socket.on('startgame', () => {
+        io.to(listMaster[socket.id]).emit('startgame');
+        roomList[listMaster[socket.id]].isPlayed = true;
+    })
+
+    socket.on('endgame', () => {
+        io.to(listMaster[socket.id]).emit('endgame');
+        roomList[listMaster[socket.id]].isPlayed = false;
+    })
+
+    socket.on('test', (args) => {
+        console.log(args);
     })
 })
 
 const auth = (roomId, password) => {
     if(roomList[roomId]) {
-        if(roomList[roomId].password) {
-            if(roomList[roomId].password === password) {
-                return {type: "success"};
-            } else {
-                return {type: "error", message: "Mật khẩu không chính xác"};
-            }
+
+        if(roomList[roomId].password && roomList[roomId].password !== password) {
+            return {type: "error", message: "Mật khẩu không chính xác"};
         } else {
-            return {type: "success"};
+            if(roomList[roomId].countBlue + roomList[roomId].countRed === 12) {
+                return {type: "error", message: "Phòng đã đủ người"};
+            } else if(roomList[roomId].isPlayed){
+                return {type: "error", message: "Game đã bắt đầu"}
+            } else {
+                return {type: "success"};
+            }
         }
     } else {
         return {type: "error", message: "Phòng không tồn tại"};

@@ -6,19 +6,29 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Document</title>
+    <title>Button Soccer</title>
 
 </head>
 <body id='body'>
 
     <form id='form'>
-        <input type="text" name="roomid" placeholder="Room Id" required>
-        <input type="text" name="name" placeholder="Name" required>
-        <input type="password" name="password" placeholder="Password" >
+        <input type="text" id="roomid" name="roomid" placeholder="Room Id" required>
+        <input type="text" id="name" name="name" placeholder="Name" required>
+        <input type="password" id="password" name="password" placeholder="Password" >
         <button type='submit'>JOIN</button>
     </form>
 </body>
 <script>
+    const params = (new URL(document.location)).searchParams;
+    const roomId = params.get('roomId'); 
+    const password = params.get('password'); 
+    if(roomId) {
+        document.getElementById('roomid').value = roomId;
+    }
+
+    if(password) {
+        document.getElementById('password').value = password;
+    }
     const form = document.getElementById('form');
     form.onsubmit = (e) => {
         e.preventDefault();

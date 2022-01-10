@@ -3,7 +3,9 @@ body {
     align-items: center;
     flex-direction: column;
     justify-content: center;
+    touch-action: pan-x pan-y;
 }
+
 
 /* button {
     margin-top: 40px;
