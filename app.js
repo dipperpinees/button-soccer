@@ -121,6 +121,25 @@ io.on('connection', async (socket) => {
     socket.on('test', (args) => {
         console.log(args);
     })
+
+    socket.on('disconnect', () => {
+        if(listMaster[socket.id]) {
+            io.to(listMaster[socket.id]).emit('status', {type: 'error', message: 'The owner has left the room'});
+            delete listMaster[socket.id];
+            delete roomList[listMaster[socket.id]];
+        } 
+
+        if(listPlayer[socket.id]) {
+            io.to(roomList[listPlayer[socket.id].roomId].masterId).emit('status', {type: 'leave', socketId: socket.id});
+            roomList[listPlayer[socket.id].roomId].listPlayer = roomList[listPlayer[socket.id].roomId].listPlayer.filter((player) => player.socketId !== socket.id);
+            if(listPlayer[socket.id].obj.team === 'blue') {
+                --roomList[listPlayer[socket.id].roomId].countBlue;
+            } else {
+                --roomList[listPlayer[socket.id].roomId].countRed;
+            }
+            delete listPlayer[socket.id];
+        }
+    })
 })
 
 const auth = (roomId, password) => {

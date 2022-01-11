@@ -14,6 +14,7 @@
     <form id='form'>
         <input type="text" id="roomid" name="roomid" placeholder="Room Id" required>
         <input type="text" id="name" name="name" placeholder="Name" required>
+        <input type="file" id="avatar" name="avatar" required>
         <input type="password" id="password" name="password" placeholder="Password" >
         <button type='submit'>JOIN</button>
     </form>
@@ -29,25 +30,39 @@
     if(password) {
         document.getElementById('password').value = password;
     }
+
+    const extensionLists = ['jpg', 'jpeg', 'gif', 'bmp', 'png', 'tiff', 'heic'];
+
+    // One validation function for all file types    
+    function isValidFileType(fName) {
+        return extensionLists.indexOf(fName.split('.').pop()) > -1;
+    }
+
+    
     const form = document.getElementById('form');
     form.onsubmit = (e) => {
         e.preventDefault();
-        const roomId = form.elements["roomid"].value;
-        const name = form.elements["name"].value;
-        const password = form.elements["password"].value;
-        fetch(`/room?roomId=${roomId}&name=${name}&password=${password}`, {
-            method: "POST",
-        }).then(res => {
-            return res.json();
-        }).then(res => {
-            if(res.type === 'error') {
-                alert(res.message);
-            } else {
-                window.location.href = `/remote?roomId=${roomId}&name=${name}&password=${password}`;
-            }
-        }).catch(err => {
-            console.log(err);
-        })
+        if(!isValidFileType(form.elements["avatar"].files[0].name.toLowerCase())) {
+            alert("Image file required");
+            return;
+        } 
+        
+        // const roomId = form.elements["roomid"].value;
+        // const name = form.elements["name"].value;
+        // const password = form.elements["password"].value;
+        // fetch(`/room?roomId=${roomId}&name=${name}&password=${password}`, {
+        //     method: "POST",
+        // }).then(res => {
+        //     return res.json();
+        // }).then(res => {
+        //     if(res.type === 'error') {
+        //         alert(res.message);
+        //     } else {
+        //         window.location.href = `/remote?roomId=${roomId}&name=${name}&password=${password}`;
+        //     }
+        // }).catch(err => {
+        //     console.log(err);
+        // })
         // window.location.href = `/remote?roomid=${roomId}&name=${name}&password=${password}`;
     }
 </script>

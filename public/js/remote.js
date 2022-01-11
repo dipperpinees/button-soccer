@@ -7,7 +7,6 @@ let moveRight;
 let moveDown;
 let moveLeft;
 const body = document.querySelector("#body");
-const MOVE_SPEED = 180;
 let count = 0;
 let listTouch = [];
 let sendMove;
@@ -35,6 +34,12 @@ $(".sharelink").onclick = () => {
 const socket = io({
     query: {type: "join", name: username, password: password, roomId: roomId}
 });
+socket.on('status', (args) => {
+    if(args.type === 'error') {
+        alert(args.message);
+        window.location.href="/join";
+    }
+})
 socket.on('startgame', () => {
     $(".waiting").style.display = 'none';
     $(".gamepad").style.display = 'flex';
@@ -110,6 +115,8 @@ const makeSendMove = () => {
     
 }
 
+// {moveX: MOVE_SPEED/2 * Math.sqrt(2), moveY: - (MOVE_SPEED/2 * Math.sqrt(2)) }
+
 const handleTouch = (touchList) => {
     if(!touchList || touchList.length === 0) return;
     const touchTemp = {};
@@ -120,25 +127,25 @@ const handleTouch = (touchList) => {
 
     if(touchTemp["up"] ) {
         if(touchTemp["right"]) {
-            return {moveX: MOVE_SPEED/2 * Math.sqrt(2), moveY: - (MOVE_SPEED/2 * Math.sqrt(2)) }
+            return "up right";
         } else if(touchTemp["left"]) {
-            return {moveX: -MOVE_SPEED/2 * Math.sqrt(2), moveY: -(MOVE_SPEED/2 * Math.sqrt(2)) }
+            return "up left";
         } else if(!touchTemp["down"]) {
-            return {moveX: 0, moveY: -MOVE_SPEED }
+            return "up"
         }
     }
     else if(touchTemp["down"]) {
         if(touchTemp["right"]) {
-            return {moveX: MOVE_SPEED/2 * Math.sqrt(2), moveY: MOVE_SPEED/2 * Math.sqrt(2) }
+            return "down right";
         } else if(touchTemp["left"]) {
-            return {moveX: -(MOVE_SPEED/2 * Math.sqrt(2)), moveY: MOVE_SPEED/2 * Math.sqrt(2) }
+            return "down left";
         }  else if(!touchTemp["up"]) {
-            return {moveX: 0, moveY: MOVE_SPEED }
+            return "down";
         }
     } else if(touchTemp["right"] && !touchTemp["left"]) {
-        return {moveX: MOVE_SPEED, moveY: 0 }
+        return "right";
     } else if(touchTemp["left"] && !touchTemp["right"]) {
-        return {moveX: -MOVE_SPEED, moveY: 0 }
+        return "left";
     }
 
     return null;
@@ -175,7 +182,6 @@ document.addEventListener("touchstart", (e) => {
         socket.emit("move", move);
     }
     let sendMove = setInterval(() => {
-        console.log("dang interval");
         if(listTouch.length === 0  || listTouch.length >= 3) {
             clearInterval(sendMove);
         }
