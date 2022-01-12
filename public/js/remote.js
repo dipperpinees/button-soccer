@@ -19,6 +19,8 @@ let currentTeam, currentPlayer;
 $ = document.querySelector.bind(document);
 $$ = document.querySelectorAll.bind(document);
 
+$(".waiting-choose img").src = localStorage.getItem("avatar");
+
 $(".fullscreen").onclick = () => {
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen();
@@ -32,14 +34,16 @@ $(".sharelink").onclick = () => {
     navigator.clipboard.writeText(`http://localhost:8001/join?roomId=${roomId}&password=${password}`);
 }
 const socket = io({
-    query: {type: "join", name: username, password: password, roomId: roomId}
+    query: {type: "join", name: username, password: password, roomId: roomId, avatar: localStorage.getItem("avatar")}
 });
+
 socket.on('status', (args) => {
     if(args.type === 'error') {
         alert(args.message);
         window.location.href="/join";
     }
 })
+
 socket.on('startgame', () => {
     $(".waiting").style.display = 'none';
     $(".gamepad").style.display = 'flex';
@@ -50,70 +54,58 @@ socket.on('endgame', () => {
 })
 socket.on('join', (args) => {
     if(args.type === 'error') {
-        // window.location.href="/";
+        window.location.href="/";
         return;
     }
-    const img = document.createElement("IMG");
-    img.alt = args.socketId;
-    img.src = `/img/${args.team}default.png`;
-    img.onclick = () => {
-        if($(".waiting-choose-toggle").style.display === 'flex') {
-            $(".waiting-choose-toggle").style.display = 'none';
-        } else {
-            $(".waiting-choose-toggle").style.display = 'flex';
-        }
-    }
-    $(".waiting-choose").appendChild(img);
     currentTeam = args.team;
     if(args.team === 'blue') {
         $('body').style.backgroundColor = "#91CAE3";
     } else {
         $('body').style.backgroundColor = "#F39898";
     }
-    players.forEach((player) => {
-        const newImg = document.createElement("IMG");
-        newImg.src = `/img/${args.team}${player}.png`;
-        newImg.onclick = () => {
-            socket.emit("player", player);
-            currentPlayer = player;
-            $(".waiting-choose > img").src = `/img/${args.team}${player}.png`;
-            $(".waiting-choose-toggle").style.display = 'none';
-        }
-        $(".waiting-choose-toggle").appendChild(newImg);
-    })
+    // players.forEach((player) => {
+    //     const newImg = document.createElement("IMG");
+    //     newImg.src = `/img/${args.team}${player}.png`;
+    //     newImg.onclick = () => {
+    //         socket.emit("player", player);
+    //         currentPlayer = player;
+    //         $(".waiting-choose > img").src = `/img/${args.team}${player}.png`;
+    //         $(".waiting-choose-toggle").style.display = 'none';
+    //     }
+    //     $(".waiting-choose-toggle").appendChild(newImg);
+    // })
 })
 $(".waiting-changeteam").onclick = () => {
     socket.emit("changeteam", null);
     if(currentTeam === 'blue') {
         $('body').style.backgroundColor = "#F39898";
-        $(".waiting-choose > img").src = `/img/red${currentPlayer || "default"}.png`;
+        // $(".waiting-choose > img").src = `/img/red${currentPlayer || "default"}.png`;
         currentTeam = 'red';
     } else {
         $('body').style.backgroundColor = "#91CAE3";
-        $(".waiting-choose > img").src = `/img/blue${currentPlayer || "default"}.png`;
+        // $(".waiting-choose > img").src = `/img/blue${currentPlayer || "default"}.png`;
         currentTeam = 'blue';
     }
-    const toggle = $(".waiting-choose-toggle");
-    while ( toggle.hasChildNodes()) {
-        toggle.removeChild( toggle.lastChild);
-    }
-    players.forEach((player) => {
-        const newImg = document.createElement("IMG");
-        newImg.src = `/img/${currentTeam}${player}.png`;
-        newImg.onclick = () => {
-            socket.emit("player", player);
-            currentPlayer = player;
-            $(".waiting-choose > img").src = `/img/${currentTeam}${player}.png`;
-            $(".waiting-choose-toggle").style.display = 'none';
-        }
-        $(".waiting-choose-toggle").appendChild(newImg);
-    })
+    // const toggle = $(".waiting-choose-toggle");
+    // while ( toggle.hasChildNodes()) {
+    //     toggle.removeChild( toggle.lastChild);
+    // }
+    // players.forEach((player) => {
+    //     const newImg = document.createElement("IMG");
+    //     newImg.src = `/img/${currentTeam}${player}.png`;
+    //     newImg.onclick = () => {
+    //         socket.emit("player", player);
+    //         currentPlayer = player;
+    //         $(".waiting-choose > img").src = `/img/${currentTeam}${player}.png`;
+    //         $(".waiting-choose-toggle").style.display = 'none';
+    //     }
+    //     $(".waiting-choose-toggle").appendChild(newImg);
+    // })
 }
 
-const makeSendMove = () => {
-    console.log("tao interval")
-    
-}
+// const makeSendMove = () => {
+//     console.log("tao interval")
+// }
 
 // {moveX: MOVE_SPEED/2 * Math.sqrt(2), moveY: - (MOVE_SPEED/2 * Math.sqrt(2)) }
 

@@ -10,7 +10,6 @@
 
 </head>
 <body id='body'>
-
     <form id='form'>
         <input type="text" id="roomid" name="roomid" placeholder="Room Id" required>
         <input type="text" id="name" name="name" placeholder="Name" required>
@@ -18,8 +17,12 @@
         <input type="password" id="password" name="password" placeholder="Password" >
         <button type='submit'>JOIN</button>
     </form>
+    <div class='loading'>
+        <div class='loading-spinner'></div>
+    </div>
 </body>
 <script>
+    $ = document.querySelector.bind(document);
     const params = (new URL(document.location)).searchParams;
     const roomId = params.get('roomId'); 
     const password = params.get('password'); 
@@ -38,32 +41,55 @@
         return extensionLists.indexOf(fName.split('.').pop()) > -1;
     }
 
+    const saveAvatar = (url) => {
+        let avatar = url.replace("upload/", `upload/w_100,h_100,c_fill,r_max/`);
+        localStorage.setItem("avatar", avatar.substring(0, avatar.lastIndexOf(".")) + ".png")
+    }
     
     const form = document.getElementById('form');
-    form.onsubmit = (e) => {
+    form.onsubmit = async (e) => {
         e.preventDefault();
+        $(".loading").style.display = 'flex';
+        const roomId = form.elements["roomid"].value;
+        const name = form.elements["name"].value;
+        const password = form.elements["password"].value;
+        let isValidRoom = true;
+        await fetch(`/room?roomId=${roomId}&name=${name}&password=${password}`, {
+            method: "POST",
+        }).then(res => {
+            return res.json();
+        }).then(res => {
+            if(res.type === 'error') {
+                alert(res.message);
+                $(".loading").style.display = "none";
+                isValidRoom = false;
+            } 
+        }).catch(err => {
+            alert(err.message);
+            $(".loading").style.display = "none";
+            isValidRoom = false;
+        })
+
+        if(!isValidRoom) return;
+
         if(!isValidFileType(form.elements["avatar"].files[0].name.toLowerCase())) {
             alert("Image file required");
+            $(".loading").style.display = "none";
             return;
         } 
         
-        // const roomId = form.elements["roomid"].value;
-        // const name = form.elements["name"].value;
-        // const password = form.elements["password"].value;
-        // fetch(`/room?roomId=${roomId}&name=${name}&password=${password}`, {
-        //     method: "POST",
-        // }).then(res => {
-        //     return res.json();
-        // }).then(res => {
-        //     if(res.type === 'error') {
-        //         alert(res.message);
-        //     } else {
-        //         window.location.href = `/remote?roomId=${roomId}&name=${name}&password=${password}`;
-        //     }
-        // }).catch(err => {
-        //     console.log(err);
-        // })
-        // window.location.href = `/remote?roomid=${roomId}&name=${name}&password=${password}`;
+        const formData = new FormData();
+        formData.append("avatar", form.elements["avatar"].files[0]);
+        await fetch("/avatar", {
+            method: 'POST',
+            body: formData
+        }).then(response => response.json())
+        .then(data => {
+            saveAvatar(data.avatar)
+            window.location.href = `/remote?roomId=${roomId}&name=${name}&password=${password}`;
+        })
+        
+        $(".loading").style.display = "none";
     }
 </script>
 </html>

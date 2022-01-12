@@ -3,7 +3,7 @@ const GAME_HEIGHT = screen.height;
 const PITCH_X = GAME_WIDTH / 12;
 const PITCH_Y = GAME_HEIGHT / 16;
 const SCALE_BALL = GAME_HEIGHT / 18 / 300;
-const SCALE_PLAYER = GAME_HEIGHT / 20 / 256;
+const SCALE_PLAYER = GAME_HEIGHT / 20 / 100;
 const STADIUM_WIDTH = GAME_WIDTH - PITCH_X * 2;
 const STADIUM_HEIGHT = GAME_HEIGHT - PITCH_Y * 2;
 const STRAIGHT_SPEED = 180;
@@ -20,27 +20,34 @@ let isMove = false;
 let time, redScore, blueScore, logGame, ball, music;
 let playerData = {};
 
-
 const teamPos = {
     "blue": [
-        {x: 3 / 8 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT / 2 - 300 * SCALE_PLAYER / 2},
-        {x: 1 / 4 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT / 2 - 300 * SCALE_PLAYER / 2},
+        {x: 3 / 8 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT / 2 - 100 * SCALE_PLAYER / 2},
+        {x: 1 / 4 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT / 2 - 100 * SCALE_PLAYER / 2},
         {x: 1 / 4 * STADIUM_WIDTH + PITCH_X, y: PITCH_Y + 1/8 * STADIUM_HEIGHT},
-        {x: 1 / 4 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/8 * STADIUM_HEIGHT - 300 * SCALE_PLAYER },
-        {x: 1 / 8 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/4 * STADIUM_HEIGHT - 300 * SCALE_PLAYER },
+        {x: 1 / 4 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/8 * STADIUM_HEIGHT - 100 * SCALE_PLAYER },
+        {x: 1 / 8 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/4 * STADIUM_HEIGHT - 100 * SCALE_PLAYER },
         {x: 1 / 8 * STADIUM_WIDTH + PITCH_X, y: PITCH_Y + 1/4 * STADIUM_HEIGHT},
     ],
     "red": [
-        {x: GAME_WIDTH - 300*SCALE_PLAYER -  3 / 8 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT / 2 - 300 * SCALE_PLAYER / 2},
-        {x: GAME_WIDTH - 300*SCALE_PLAYER - 1 / 4 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT / 2 - 300 * SCALE_PLAYER / 2},
-        {x: GAME_WIDTH - 300*SCALE_PLAYER- 1 / 4 * STADIUM_WIDTH - PITCH_X, y: PITCH_Y + 1/8 * STADIUM_HEIGHT},
-        {x: GAME_WIDTH - 300*SCALE_PLAYER - 1 / 4 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/8 * STADIUM_HEIGHT - 300 * SCALE_PLAYER },
-        {x: GAME_WIDTH - 300*SCALE_PLAYER - 1 / 8 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/4 * STADIUM_HEIGHT - 300 * SCALE_PLAYER },
-        {x: GAME_WIDTH - 300*SCALE_PLAYER - 1 / 8 * STADIUM_WIDTH - PITCH_X, y: PITCH_Y + 1/4 * STADIUM_HEIGHT},
+        {x: GAME_WIDTH - 100*SCALE_PLAYER -  3 / 8 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT / 2 - 100 * SCALE_PLAYER / 2},
+        {x: GAME_WIDTH - 100*SCALE_PLAYER - 1 / 4 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT / 2 - 100 * SCALE_PLAYER / 2},
+        {x: GAME_WIDTH - 100*SCALE_PLAYER- 1 / 4 * STADIUM_WIDTH - PITCH_X, y: PITCH_Y + 1/8 * STADIUM_HEIGHT},
+        {x: GAME_WIDTH - 100*SCALE_PLAYER - 1 / 4 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/8 * STADIUM_HEIGHT - 100 * SCALE_PLAYER },
+        {x: GAME_WIDTH - 100*SCALE_PLAYER - 1 / 8 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/4 * STADIUM_HEIGHT - 100 * SCALE_PLAYER },
+        {x: GAME_WIDTH - 100*SCALE_PLAYER - 1 / 8 * STADIUM_WIDTH - PITCH_X, y: PITCH_Y + 1/4 * STADIUM_HEIGHT},
     ]
 }
 
-const addPlayer = (listPlayer) => {
+const handleAvatar = (avatar, team) => {
+    if(team === "blue") {
+        return avatar.replace(",r_max/", `,r_max,bo_6px_solid_royalblue/`);
+    } else {
+        return avatar.replace(",r_max/", `,r_max,bo_6px_solid_indianred/`);
+    }
+}
+
+const addPlayer = async (listPlayer) => {
     const handlePlayerCollide = (obj, name, team) => {
         obj.collides("wallleft1",  () => {
             obj.move(200, 0);
@@ -96,12 +103,13 @@ const addPlayer = (listPlayer) => {
     let countRed = -1;
 
     //add player and handle player collide
-    listPlayer.forEach((player) => {
+    await listPlayer.forEach(async (player) => {
+        await loadSprite(`${player.team}_${player.socketId}`, handleAvatar(player.avatar, player.team));
         const count = player.team === 'blue' ? ++countBlue : ++countRed;
         playerData[player.socketId] = {};
         playerData[player.socketId]["defaultPos"] = {x: teamPos[player.team][count].x, y: teamPos[player.team][count].y}
         playerData[player.socketId]["player"] = add([
-            sprite(`${player.team}${player.player}`),
+            sprite(`${player.team}_${player.socketId}`),
             pos(teamPos[player.team][count].x, teamPos[player.team][count].y),
             area(),
             scale(SCALE_PLAYER),
@@ -110,13 +118,12 @@ const addPlayer = (listPlayer) => {
         ])
     })
 
-    every("player", (s) => {
+    await every("player", (s) => {
         s.collides("player", (t) => {
             s.move(8*(s.pos.x-t.pos.x), 8*(s.pos.y-t.pos.y));
         })
         handlePlayerCollide(s, s.value.name, s.value.team);
     })
-
 }
 
 const addBall = () => {
@@ -433,7 +440,7 @@ const handleSaveLog = (player, teamGoal, isOG, time) => {
     }
 }
 
-const resetGame = (listPlayer, ballSrc, startTime) => {
+const resetGame = async (listPlayer, ballSrc, startTime, isPlayAgain) => {
     loadSprite("ball", ballSrc);
     isEndGame = false;
     playerData = {};
@@ -447,10 +454,16 @@ const resetGame = (listPlayer, ballSrc, startTime) => {
     time.value = startTime;
 
     //readd ball
-    addBall();
+    await addBall();
 
     //readd player
-    addPlayer(listPlayer);
+    await addPlayer(listPlayer);
+
+    if(isPlayAgain) {
+        debug.paused = false;
+        music.play();
+        $("canvas").style.display = "block";
+    }
 
     //whistle and start game
     wait(3, () => {
@@ -545,34 +558,34 @@ const game = () => {
     loadSprite('pencircle', '/img/circlepenalty.png')
     loadSprite('net', '/img/goal.png');
     loadSprite('goal', '/img/goal_text.png');
-    loadSprite('bluemessi', '/img/bluemessi.png');
-    loadSprite('blueronaldo', '/img/blueronaldo.png');
-    loadSprite('bluebruyne', '/img/bluebruyne.png');
-    loadSprite('bluecongphuong', '/img/bluecongphuong.png');
-    loadSprite('bluekante', '/img/bluekante.png');
-    loadSprite('blueneymar', '/img/blueneymar.png');
-    loadSprite('bluequanghai', '/img/bluequanghai.png');
-    loadSprite('bluelukaku', '/img/bluelukaku.png');
-    loadSprite('bluetuananh', '/img/bluetuananh.png');
-    loadSprite('bluembappe', '/img/bluembappe.png');
-    loadSprite('bluequanghai', '/img/bluequanghai.png');
-    loadSprite('bluehoangduc', '/img/bluehoangduc.png');
-    loadSprite('bluehaaland', '/img/bluehaaland.png');
-    loadSprite('redmessi', '/img/redmessi.png');
-    loadSprite('redronaldo', '/img/redronaldo.png');
-    loadSprite('redbruyne', '/img/redbruyne.png');
-    loadSprite('redcongphuong', '/img/redcongphuong.png');
-    loadSprite('redkante', '/img/redkante.png');
-    loadSprite('redneymar', '/img/redneymar.png');
-    loadSprite('redquanghai', '/img/redquanghai.png');
-    loadSprite('redlukaku', '/img/redlukaku.png');
-    loadSprite('redtuananh', '/img/redtuananh.png');
-    loadSprite('redmbappe', '/img/redmbappe.png');
-    loadSprite('redquanghai', '/img/redquanghai.png');
-    loadSprite('redhoangduc', '/img/redhoangduc.png');
-    loadSprite('redhaaland', '/img/redhaaland.png');
-    loadSprite('bluedefault', '/img/bluedefault.png')
-    loadSprite('reddefault', '/img/reddefault.png')
+    // loadSprite('bluemessi', '/img/bluemessi.png');
+    // loadSprite('blueronaldo', '/img/blueronaldo.png');
+    // loadSprite('bluebruyne', '/img/bluebruyne.png');
+    // loadSprite('bluecongphuong', '/img/bluecongphuong.png');
+    // loadSprite('bluekante', '/img/bluekante.png');
+    // loadSprite('blueneymar', '/img/blueneymar.png');
+    // loadSprite('bluequanghai', '/img/bluequanghai.png');
+    // loadSprite('bluelukaku', '/img/bluelukaku.png');
+    // loadSprite('bluetuananh', '/img/bluetuananh.png');
+    // loadSprite('bluembappe', '/img/bluembappe.png');
+    // loadSprite('bluequanghai', '/img/bluequanghai.png');
+    // loadSprite('bluehoangduc', '/img/bluehoangduc.png');
+    // loadSprite('bluehaaland', '/img/bluehaaland.png');
+    // loadSprite('redmessi', '/img/redmessi.png');
+    // loadSprite('redronaldo', '/img/redronaldo.png');
+    // loadSprite('redbruyne', '/img/redbruyne.png');
+    // loadSprite('redcongphuong', '/img/redcongphuong.png');
+    // loadSprite('redkante', '/img/redkante.png');
+    // loadSprite('redneymar', '/img/redneymar.png');
+    // loadSprite('redquanghai', '/img/redquanghai.png');
+    // loadSprite('redlukaku', '/img/redlukaku.png');
+    // loadSprite('redtuananh', '/img/redtuananh.png');
+    // loadSprite('redmbappe', '/img/redmbappe.png');
+    // loadSprite('redquanghai', '/img/redquanghai.png');
+    // loadSprite('redhoangduc', '/img/redhoangduc.png');
+    // loadSprite('redhaaland', '/img/redhaaland.png');
+    // loadSprite('bluedefault', '/img/bluedefault.png')
+    // loadSprite('reddefault', '/img/reddefault.png')
     loadSound("crowd", "/sound/crowd.mp3");
     loadSound("goal", "/sound/goal.mp3");
     loadSound("whistle", "/sound/whistle.mp3");
@@ -735,13 +748,13 @@ socket.on("create", ({roomId}) => {
     $(".settings-roomid").textContent = `Room Id: ${roomId}`
 })
 socket.on("join", (args) => {
-    const {socketId, name, team, player} = args;
+    const {socketId, name, team, avatar} = args;
     const li = document.createElement("li");
     li.classList.add(`li-${socketId}`);
     const img = document.createElement("IMG");
     img.alt = socketId;
-    img.src = `/img/${team}${player}.png`;
-    img.classList.add(`img-${socketId}`);
+    img.src = avatar;
+    // img.classList.add(`img-${socketId}`);
     li.appendChild(img);
     const p = document.createElement("p");
     p.textContent = name;
@@ -755,22 +768,17 @@ socket.on("status", (args) => {
         delete listPlayer[args.socketId];
     }
 })
-socket.on("player", ({socketId, player, team}) => {
-    $(`.img-${socketId}`).src = `/img/${team}${player}.png`;
-    listPlayer[socketId].player = player;
-})
-socket.on("changeteam", ({socketId, name, team, player}) => {
+// socket.on("player", ({socketId, player, team}) => {
+//     $(`.img-${socketId}`).src = `/img/${team}${player}.png`;
+//     listPlayer[socketId].player = player;
+// })
+socket.on("changeteam", ({socketId, name, team, avatar}) => {
     $(`.li-${socketId}`).remove();
     const li = document.createElement("li");
     li.classList.add(`li-${socketId}`);
     const img = document.createElement("IMG");
     img.alt = socketId;
-    if(!player) {
-        img.src = `/img/${team}default.png`;
-    } else {
-        img.src = `/img/${team}${player}.png`;
-    }
-    img.classList.add(`img-${socketId}`);
+    img.src = avatar;
     li.appendChild(img);
     const p = document.createElement("p");
     p.textContent = name;
@@ -787,10 +795,7 @@ $(".settings-start").onclick = () => {
         game();
         resetGame(Object.values(listPlayer), $(".ball-choose").getAttribute("src"), 60 * Number($(".time-choose").getAttribute("time")));
     } else {
-        $("canvas").style.display = 'block';
-        resetGame(Object.values(listPlayer), $(".ball-choose").getAttribute("src"), 60 * Number($(".time-choose").getAttribute("time")));
-        debug.paused = false;
-        music.play();
+        resetGame(Object.values(listPlayer), $(".ball-choose").getAttribute("src"), 60 * Number($(".time-choose").getAttribute("time")), true);
     }
 
     //open full screen

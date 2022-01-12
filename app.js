@@ -1,6 +1,9 @@
 const express = require('express');
 const ejs = require('ejs');
 const app = express();
+const {cloudinaryConfig, storage} = require("./cloudinary");
+const cloudinary =  require("cloudinary").v2;
+const multer = require("multer");
 
 const server = require("http").Server(app);
 const io = require("socket.io")(server, {
@@ -18,6 +21,8 @@ app.set('view engine', 'ejs');
 app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+const upload = multer({ storage: storage });
 
 app.get("/", (req, res) => {
     res.render("home")
@@ -45,6 +50,11 @@ app.post("/room", (req, res) => {
     }
 })
 
+app.post("/avatar", upload.single('avatar'),  (req, res) => {
+    const avatar = req?.file?.path;
+    res.json({avatar});
+})
+
 const roomList = {};
 let maxRoomId = 99999;
 const listPlayer = {};
@@ -52,8 +62,7 @@ const listMaster = {};
 
 io.on('connection', async (socket) => {
     console.log('new user connected');
-    const {type, roomId, name, password} = socket.handshake.query;
-
+    const {type, roomId, name, password, avatar} = socket.handshake.query;
     if(type === 'join') {
         const {type, messsage} = auth(roomId, password);
         if(type === 'error') {
@@ -63,14 +72,14 @@ io.on('connection', async (socket) => {
             listPlayer[socket.id] = {roomId: roomId};
             if(roomList[roomId].countBlue <= roomList[roomId].countRed) {
                 socket.emit('join', {type: 'success', team: 'blue'});
-                const currentPlayer = {socketId: socket.id, name: name, player: 'default', team:'blue'};
+                const currentPlayer = {socketId: socket.id, name: name, avatar: avatar, team:'blue'};
                 io.to(roomList[roomId].masterId).emit("join", currentPlayer);
                 roomList[roomId].listPlayer.push(currentPlayer);
                 listPlayer[socket.id]["obj"] = currentPlayer;
                 ++roomList[roomId].countBlue;
             } else {
                 socket.emit('join', {type: 'success', team: 'red'});
-                const currentPlayer = {socketId: socket.id, name: name, player: 'default', team:'red'};
+                const currentPlayer = {socketId: socket.id, name: name, avatar: avatar, team:'red'};
                 io.to(roomList[roomId].masterId).emit("join", currentPlayer); 
                 roomList[roomId].listPlayer.push(currentPlayer);
                 listPlayer[socket.id]["obj"] = currentPlayer;
@@ -89,10 +98,10 @@ io.on('connection', async (socket) => {
         io.to(roomList[listPlayer[socket.id].roomId].masterId).emit("move", {socketId: socket.id, move: args});
     })
 
-    socket.on('player', (args) => {
-        io.to(roomList[listPlayer[socket.id].roomId].masterId).emit("player", {socketId: socket.id, player: args, team: listPlayer[socket.id].obj.team});
-        listPlayer[socket.id].obj.player = args;
-    } )
+    // socket.on('player', (args) => {
+    //     io.to(roomList[listPlayer[socket.id].roomId].masterId).emit("player", {socketId: socket.id, player: args, team: listPlayer[socket.id].obj.team});
+    //     listPlayer[socket.id].obj.player = args;
+    // } )
 
     socket.on('changeteam', (args) => {
         const roomId = listPlayer[socket.id].roomId;

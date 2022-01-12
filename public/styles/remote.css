@@ -101,6 +101,7 @@ body {
     width: 140px;
     height: 140px;
     margin-top: 32px;
+    border-radius: 50%;
 }
 
 .waiting-choose > img:hover {
