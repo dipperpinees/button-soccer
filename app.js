@@ -72,7 +72,6 @@ const randomId = () => {
 }
 
 io.on('connection', async (socket) => {
-    console.log('new user connected');
     const {type, roomId, name, password, avatar} = socket.handshake.query;
     if(type === 'join') {
         const {type, messsage} = auth(roomId, password);

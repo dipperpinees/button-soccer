@@ -437,7 +437,7 @@ const handleSaveLog = (logGame, player, teamGoal, isOG, time) => {
     }
 }
 
-const resetBall = () => {
+const resetBall = (ball) => {
     ball.value.x = 0;
     ball.value.y = 0;
 
@@ -449,33 +449,22 @@ const resetBall = () => {
 }
 
 const handleShowGoal = (touchPlayer, touchTeam, time, teamGoal) => {
-    wait(2, () => {
-        const goal = add([
-            sprite("goal"),
-            pos(GAME_WIDTH / 2 - 434/2, GAME_HEIGHT / 2 - 149/2),
-            "goal"
-        ])
+    // wait(2, () => {
+    add([
+        sprite("goal"),
+        pos(GAME_WIDTH / 2 - 434/2, GAME_HEIGHT / 2 - 149/2),
+        "goal"
+    ])
     
-        const goalPlayer = add([
-            pos(GAME_WIDTH / 2 - 434/2 + 20, GAME_HEIGHT / 2 + 149/2),
-            text(`${touchPlayer}  ${touchTeam !== teamGoal ? "(OG)" : ""} ${time}`, {
-                size: 24,
-            }),
-            "goalplayer"
-        ])
-        wait(4, () => {
-            destroy(goal);
-            destroy(goalPlayer)
-            isGoal = false;
-            resetBall();
-            wait(2, () => {
-                play("whistle");
-                isMove = true;
-            })
-        })
-    })
+    add([
+        pos(GAME_WIDTH / 2 - 434/2 + 20, GAME_HEIGHT / 2 + 149/2),
+        text(`${touchPlayer}  ${touchTeam !== teamGoal ? "(OG)" : ""} ${time}`, {
+            size: 24,
+        }),
+        "goalplayer"
+    ])
+        
 }
-
 
 const game = (listPlayer, ballSrc, startTime) => {
     let isGoal = false;
@@ -560,14 +549,14 @@ const game = (listPlayer, ballSrc, startTime) => {
             play("endwhistle");
             socket.emit('endgame');
 
+            //stop move
+            isMove = false;
+
             //stop ball
             ball.value.x = 0;
             ball.value.y = 0;
-
-            //stop move
-            isMove = false;
             wait(4, () => {
-                handleShowLog(blueScore.text, redScore,tex, logGame);
+                handleShowLog(blueScore.text, redScore.text, logGame);
                 music.pause();
                 debug.paused = true;
 
@@ -602,9 +591,21 @@ const game = (listPlayer, ballSrc, startTime) => {
                 isGoal = 'red';
                 redScore.value++;
                 redScore.text = redScore.value;
-                handleShowGoal(ball.value.touch, ball.value.touchTeam, time.text, "red");
-                play("goal");
                 isMove = false;
+                play("goal");
+                wait(2, () => {
+                    handleShowGoal(ball.value.touch, ball.value.touchTeam, time.text, "red");
+                    wait(3, () => {
+                        destroyAll("goal");
+                        destroyAll("goalplayer");
+                        isGoal = false;
+                        resetBall(ball);
+                        wait(2, () => {
+                            play("whistle");
+                            isMove = true;
+                        })
+                    })
+                })
                 handleSaveLog(logGame, ball.value.touch, "red", ball.value.touchTeam !== "red", time.text);
             }
             if(ball.pos.x >= (GAME_WIDTH - PITCH_X)) {
@@ -612,9 +613,21 @@ const game = (listPlayer, ballSrc, startTime) => {
                 isGoal = 'blue';
                 blueScore.value++;
                 blueScore.text = blueScore.value;
-                handleShowGoal(ball.value.touch, ball.value.touchTeam, time.text, "blue");
                 play("goal");
                 isMove = false;
+                wait(2, () => {
+                    handleShowGoal(ball.value.touch, ball.value.touchTeam, time.text, "blue");
+                    wait(3, () => {
+                        destroyAll("goal");
+                        destroyAll("goalplayer");
+                        isGoal = false;
+                        resetBall(ball);
+                        wait(2, () => {
+                            play("whistle");
+                            isMove = true;
+                        })
+                    })
+                })
                 handleSaveLog(logGame, ball.value.touch, "blue", ball.value.touchTeam !== "blue", time.text);
             }
         }
