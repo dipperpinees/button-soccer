@@ -11,16 +11,25 @@
 </head>
 <body id='body'>
     <form id='form'>
-        <input type="text" id="roomid" name="roomid" placeholder="Room Id" required>
-        <input type="text" id="name" name="name" placeholder="Name" required>
-        <input type="file" id="avatar" name="avatar" required>
-        <input type="password" id="password" name="password" placeholder="Password" >
+        <img class='upload' src='/img/upload.png' alt="upload">
+        <!-- <img class='avatar' src="https://res.cloudinary.com/uethehe/image/upload/w_1000,c_fill,ar_1:1,g_auto,r_max,bo_5px_solid_red,b_rgb:262c35/v1641971743/DEV/788946_people_512x512_w4e5zx.png" alt="avatar"> -->
+        <input type="text" id="roomid" name="roomid" placeholder="Room Id" >
+        <input type="text" id="name" name="name" placeholder="Name" >
+        <input type="file" id="avatar" name="avatar" class='inputimage' style="display: none">
+        <!-- <input type="password" id="password" name="password" placeholder="Password" > -->
         <button type='submit'>JOIN</button>
     </form>
     <div class='loading'>
         <div class='loading-spinner'></div>
     </div>
+    <div class='modal'>
+        <div class='modal-box'>
+            <h5>Wrong Password</h5>
+            <button>OK</button>
+        </div>
+    </div>
 </body>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.1/dist/js.cookie.min.js" ></script>
 <script>
     $ = document.querySelector.bind(document);
     const params = (new URL(document.location)).searchParams;
@@ -34,60 +43,91 @@
         document.getElementById('password').value = password;
     }
 
-    const extensionLists = ['jpg', 'jpeg', 'gif', 'bmp', 'png', 'tiff', 'heic'];
+    if(Cookies.get("avatar")) {
+        $(".upload").src = Cookies.get("avatar");
+    }
 
-    // One validation function for all file types    
+    $(".upload").onclick = () => {
+        $(".inputimage").click();
+    }
+
+    $(".inputimage").onchange = (e) => {
+        if(isValidFileType(e.target.files[0].name.toLowerCase())) {
+            $(".upload").src = URL.createObjectURL(e.target.files[0]);
+        }
+    }
+
+    const showModal = (message) => {
+        $(".modal-box h5").textContent = message;
+        $(".modal").style.display = "flex";
+    }
+
+    $(".modal-box button").onclick = () => {
+        $(".modal").style.display = "none";
+    }
+
+    const extensionLists = ['jpg', 'jpeg', 'gif', 'bmp', 'png', 'tiff', 'heic'];
+  
     function isValidFileType(fName) {
         return extensionLists.indexOf(fName.split('.').pop()) > -1;
     }
 
-    const saveAvatar = (url) => {
-        let avatar = url.replace("upload/", `upload/w_100,h_100,c_fill,r_max/`);
-        localStorage.setItem("avatar", avatar.substring(0, avatar.lastIndexOf(".")) + ".png")
+    const form = $('form');
+
+    const validate = () => {
+        if(!form.elements["roomid"].value) {
+            return "Room ID required"
+        }
+
+        if(!form.elements["name"].value) {
+            return "Name required"
+        }
+        
+        return "OK"
     }
-    
-    const form = document.getElementById('form');
+
     form.onsubmit = async (e) => {
         e.preventDefault();
+        if(validate() !== "OK") {
+            showModal(validate());
+        }
         $(".loading").style.display = 'flex';
         const roomId = form.elements["roomid"].value;
         const name = form.elements["name"].value;
-        const password = form.elements["password"].value;
+        // const password = form.elements["password"].value;
         let isValidRoom = true;
-        await fetch(`/room?roomId=${roomId}&name=${name}&password=${password}`, {
+        await fetch(`/room?roomId=${roomId}&name=${name}`, {
             method: "POST",
         }).then(res => {
             return res.json();
         }).then(res => {
             if(res.type === 'error') {
-                alert(res.message);
+                showModal(res.message);
                 $(".loading").style.display = "none";
                 isValidRoom = false;
             } 
         }).catch(err => {
-            alert(err.message);
+            showModal(err.message);
             $(".loading").style.display = "none";
             isValidRoom = false;
         })
 
         if(!isValidRoom) return;
 
-        if(!isValidFileType(form.elements["avatar"].files[0].name.toLowerCase())) {
-            alert("Image file required");
-            $(".loading").style.display = "none";
-            return;
+        if(form.elements["avatar"].files[0] && isValidFileType(form.elements["avatar"].files[0].name.toLowerCase())) {
+            const formData = new FormData();
+            formData.append("avatar", form.elements["avatar"].files[0]);
+            await fetch("/avatar", {
+                method: 'POST',
+                body: formData
+            })
         } 
-        
-        const formData = new FormData();
-        formData.append("avatar", form.elements["avatar"].files[0]);
-        await fetch("/avatar", {
-            method: 'POST',
-            body: formData
-        }).then(response => response.json())
-        .then(data => {
-            saveAvatar(data.avatar)
+
+        if(Cookies.get("avatar")) {
             window.location.href = `/remote?roomId=${roomId}&name=${name}&password=${password}`;
-        })
+        } else {
+            showModal("Image file required");
+        }
         
         $(".loading").style.display = "none";
     }

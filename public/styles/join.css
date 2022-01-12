@@ -60,3 +60,50 @@ body {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    z-index: 2;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-box {
+    background-color: white;
+    width: 260px;
+    height: 80px;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-direction: column;
+}
+
+.modal-box button {
+    padding: 2px 16px;
+    background-color: #ccc;
+}
+
+.modal-box button:hover {
+    opacity: 0.8;
+    cursor: pointer;
+}
+
+.upload {
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    margin-bottom: 20px;
+}
+
+.upload:hover {
+    opacity: 0.8;
+    cursor: pointer;
+}

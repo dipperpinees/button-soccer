@@ -15,10 +15,6 @@ const socket = io({query: {type: 'create'}});
 const listBall = $$(".settings-ball li");
 const listTime = $$(".settings-time li");
 const listPlayer = {};
-let isGoal = false;
-let isMove = false;
-let time, redScore, blueScore, logGame, ball, music;
-let playerData = {};
 
 const teamPos = {
     "blue": [
@@ -47,7 +43,7 @@ const handleAvatar = (avatar, team) => {
     }
 }
 
-const addPlayer = async (listPlayer) => {
+const addPlayer = async (listPlayer, playerData) => {
     const handlePlayerCollide = (obj, name, team) => {
         obj.collides("wallleft1",  () => {
             obj.move(200, 0);
@@ -90,9 +86,9 @@ const addPlayer = async (listPlayer) => {
         obj.collides("ball",  (s) => {
             s.value.touch = name;
             s.value.touchTeam = team;
-            obj.move(8*(obj.pos.x-ball.pos.x), 8*(obj.pos.y-ball.pos.y));
-            const vectoX = ball.pos.x-obj.pos.x;
-            const vectoY = ball.pos.y-obj.pos.y;
+            obj.move(8*(obj.pos.x-s.pos.x), 8*(obj.pos.y-s.pos.y));
+            const vectoX = s.pos.x-obj.pos.x;
+            const vectoY = s.pos.y-obj.pos.y;
             const countStepMove = Math.sqrt((Math.pow(BALL_SPEED + 40, 2))/(Math.pow(vectoX, 2) +  Math.pow(vectoY, 2) ))
             s.value.x += countStepMove * vectoX;
             s.value.y += countStepMove * vectoY;
@@ -103,8 +99,8 @@ const addPlayer = async (listPlayer) => {
     let countRed = -1;
 
     //add player and handle player collide
-    await listPlayer.forEach(async (player) => {
-        await loadSprite(`${player.team}_${player.socketId}`, handleAvatar(player.avatar, player.team));
+    listPlayer.forEach(async (player) => {
+        loadSprite(`${player.team}_${player.socketId}`, handleAvatar(player.avatar, player.team));
         const count = player.team === 'blue' ? ++countBlue : ++countRed;
         playerData[player.socketId] = {};
         playerData[player.socketId]["defaultPos"] = {x: teamPos[player.team][count].x, y: teamPos[player.team][count].y}
@@ -118,7 +114,7 @@ const addPlayer = async (listPlayer) => {
         ])
     })
 
-    await every("player", (s) => {
+    every("player", (s) => {
         s.collides("player", (t) => {
             s.move(8*(s.pos.x-t.pos.x), 8*(s.pos.y-t.pos.y));
         })
@@ -128,7 +124,7 @@ const addPlayer = async (listPlayer) => {
 
 const addBall = () => {
     //add ball and handle ball collide
-    ball = add([
+    const ball = add([
         sprite("ball"),
         pos(GAME_WIDTH / 2 - 256*SCALE_BALL/2, GAME_HEIGHT / 2 - 256*SCALE_BALL/2),
         area(),
@@ -187,6 +183,7 @@ const addBall = () => {
         ball.value.y = ball.value.y * -1;
         ball.move(0, -200);
     })
+    return ball;
 }
 
 const buildStadium = () => {
@@ -410,8 +407,8 @@ const buildStadium = () => {
     ])
 }
 
-const handleShowLog = () => {
-    $(".lastmatch-detail > p").textContent = `${blueScore.text} - ${redScore.text}`;
+const handleShowLog = (blueScore, redScore, logGame) => {
+    $(".lastmatch-detail > p").textContent = `${blueScore} - ${redScore}`;
     while ( $(".blue-detail").hasChildNodes()) {
         $(".blue-detail").removeChild( $(".blue-detail").lastChild);
     }
@@ -432,44 +429,12 @@ const handleShowLog = () => {
 
 }
 
-const handleSaveLog = (player, teamGoal, isOG, time) => {
+const handleSaveLog = (logGame, player, teamGoal, isOG, time) => {
     if(logGame[teamGoal][player]) {
         logGame[teamGoal][player].push(`${time}${isOG ? "-OG" : ""}`);
     } else {
         logGame[teamGoal][player] = [`${time}${isOG ? "-OG" : ""}`];
     }
-}
-
-const resetGame = async (listPlayer, ballSrc, startTime, isPlayAgain) => {
-    loadSprite("ball", ballSrc);
-    isEndGame = false;
-    playerData = {};
-    isMove = false;
-    logGame = {
-        "blue": {},
-        "red": {}
-    };
-
-    //reset time
-    time.value = startTime;
-
-    //readd ball
-    await addBall();
-
-    //readd player
-    await addPlayer(listPlayer);
-
-    if(isPlayAgain) {
-        debug.paused = false;
-        music.play();
-        $("canvas").style.display = "block";
-    }
-
-    //whistle and start game
-    wait(3, () => {
-        play("whistle");
-        isMove = true;
-    })
 }
 
 const resetBall = () => {
@@ -511,39 +476,15 @@ const handleShowGoal = (touchPlayer, touchTeam, time, teamGoal) => {
     })
 }
 
-const addScoreBoard = () => {
-    //score
-    blueScore = add([
-        pos(GAME_WIDTH / 2 - 60, 8),
-        text("0", {
-            size: 20, // 48 pixels tall
-            font: 'sinko'
-        }),
-        {value: 0},
-        color(66, 180, 230)
-    ])
-    
-    time = add([
-        pos(GAME_WIDTH / 2 - 30 , 8),
-        text("", {
-            size: 16,
-            font: 'sinko',
-        }),
-        { value: -1 }
-    ])
 
-    redScore = add([
-        pos(GAME_WIDTH / 2 + 50, 8),
-        text("0", {
-            size: 20, // 48 pixels tall
-            font: 'sinko'
-        }),
-        {value: 0},
-        color(237, 62, 62)
-    ])
-}
-
-const game = () => {
+const game = (listPlayer, ballSrc, startTime) => {
+    let isGoal = false;
+    let isMove = false;
+    let playerData = {};
+    const logGame = {
+        "blue": {},
+        "red": {}
+    }
 
     kaboom({
         background: [49, 217, 120],
@@ -558,47 +499,48 @@ const game = () => {
     loadSprite('pencircle', '/img/circlepenalty.png')
     loadSprite('net', '/img/goal.png');
     loadSprite('goal', '/img/goal_text.png');
-    // loadSprite('bluemessi', '/img/bluemessi.png');
-    // loadSprite('blueronaldo', '/img/blueronaldo.png');
-    // loadSprite('bluebruyne', '/img/bluebruyne.png');
-    // loadSprite('bluecongphuong', '/img/bluecongphuong.png');
-    // loadSprite('bluekante', '/img/bluekante.png');
-    // loadSprite('blueneymar', '/img/blueneymar.png');
-    // loadSprite('bluequanghai', '/img/bluequanghai.png');
-    // loadSprite('bluelukaku', '/img/bluelukaku.png');
-    // loadSprite('bluetuananh', '/img/bluetuananh.png');
-    // loadSprite('bluembappe', '/img/bluembappe.png');
-    // loadSprite('bluequanghai', '/img/bluequanghai.png');
-    // loadSprite('bluehoangduc', '/img/bluehoangduc.png');
-    // loadSprite('bluehaaland', '/img/bluehaaland.png');
-    // loadSprite('redmessi', '/img/redmessi.png');
-    // loadSprite('redronaldo', '/img/redronaldo.png');
-    // loadSprite('redbruyne', '/img/redbruyne.png');
-    // loadSprite('redcongphuong', '/img/redcongphuong.png');
-    // loadSprite('redkante', '/img/redkante.png');
-    // loadSprite('redneymar', '/img/redneymar.png');
-    // loadSprite('redquanghai', '/img/redquanghai.png');
-    // loadSprite('redlukaku', '/img/redlukaku.png');
-    // loadSprite('redtuananh', '/img/redtuananh.png');
-    // loadSprite('redmbappe', '/img/redmbappe.png');
-    // loadSprite('redquanghai', '/img/redquanghai.png');
-    // loadSprite('redhoangduc', '/img/redhoangduc.png');
-    // loadSprite('redhaaland', '/img/redhaaland.png');
-    // loadSprite('bluedefault', '/img/bluedefault.png')
-    // loadSprite('reddefault', '/img/reddefault.png')
     loadSound("crowd", "/sound/crowd.mp3");
     loadSound("goal", "/sound/goal.mp3");
     loadSound("whistle", "/sound/whistle.mp3");
     loadSound("endwhistle", "/sound/endwhistle.mp3");
+    loadSprite("ball", ballSrc);
 
     buildStadium();
     
     //play background music
-    music = play("crowd", {
+    const music = play("crowd", {
         loop: true
     })
 
-    addScoreBoard();
+    //score board
+    const blueScore = add([
+        pos(GAME_WIDTH / 2 - 60, 8),
+        text("0", {
+            size: 20, // 48 pixels tall
+            font: 'sinko'
+        }),
+        {value: 0},
+        color(66, 180, 230)
+    ])
+    const time = add([
+        pos(GAME_WIDTH / 2 - 30 , 8),
+        text("", {
+            size: 16,
+            font: 'sinko',
+        }),
+        { value: startTime }
+    ])
+    const redScore = add([
+        pos(GAME_WIDTH / 2 + 50, 8),
+        text("0", {
+            size: 20, // 48 pixels tall
+            font: 'sinko'
+        }),
+        {value: 0},
+        color(237, 62, 62)
+    ])
+
+    const ball = addBall();
 
     loop(1, () => {
         if(!isMove) return;
@@ -625,29 +567,24 @@ const game = () => {
             //stop move
             isMove = false;
             wait(4, () => {
-                //destroy and reset this game's sprite
-                destroyAll('player');
-                destroy(ball);
-                blueScore.value = 0;
-                blueScore.text = 0;
-                redScore.text = 0;
-                redScore.value = 0;
-                time.text = "";
-                time.value = -1;
-
-                //pause all event
+                handleShowLog(blueScore.text, redScore,tex, logGame);
                 music.pause();
                 debug.paused = true;
 
-                //return waiting screen
+                //destroy all game's object
+                every((obj) => {
+                    destroy(obj)
+                })
+
                 fullscreen(!isFullscreen());
-                handleShowLog();
-                $("canvas").style.display = "none";
+                const canvas = $('canvas');
+                canvas.remove();
+
+                //return waiting screen
                 $(".wait").style.display = "flex";
             })
         }
     })
-
 
     onUpdate('ball' , () => {
         const handleMoveBall = () => {
@@ -668,7 +605,7 @@ const game = () => {
                 handleShowGoal(ball.value.touch, ball.value.touchTeam, time.text, "red");
                 play("goal");
                 isMove = false;
-                handleSaveLog(ball.value.touch, "red", ball.value.touchTeam !== "red", time.text);
+                handleSaveLog(logGame, ball.value.touch, "red", ball.value.touchTeam !== "red", time.text);
             }
             if(ball.pos.x >= (GAME_WIDTH - PITCH_X)) {
                 shake(120);
@@ -678,7 +615,7 @@ const game = () => {
                 handleShowGoal(ball.value.touch, ball.value.touchTeam, time.text, "blue");
                 play("goal");
                 isMove = false;
-                handleSaveLog(ball.value.touch, "blue", ball.value.touchTeam !== "blue", time.text);
+                handleSaveLog(logGame, ball.value.touch, "blue", ball.value.touchTeam !== "blue", time.text);
             }
         }
         handleMoveBall();
@@ -719,6 +656,10 @@ const game = () => {
                 break;
         }
     })
+ 
+
+    //readd player
+    addPlayer(listPlayer, playerData);
 
     onUpdate("player", (s) => {
         if(Math.abs(s.value.x) < 1 && Math.abs(s.value.y) < 1) return;
@@ -726,6 +667,12 @@ const game = () => {
         s.value.y  = s.value.y / 1.08;
     
         s.move(s.value.x, s.value.y);
+    })
+
+    //whistle and start game
+    wait(3, () => {
+        play("whistle");
+        isMove = true;
     })
 
 }
@@ -791,12 +738,7 @@ $(".settings-start").onclick = () => {
     $(".wait").style.display = 'none';
     socket.emit('startgame');
 
-    if(!$("canvas")) {
-        game();
-        resetGame(Object.values(listPlayer), $(".ball-choose").getAttribute("src"), 60 * Number($(".time-choose").getAttribute("time")));
-    } else {
-        resetGame(Object.values(listPlayer), $(".ball-choose").getAttribute("src"), 60 * Number($(".time-choose").getAttribute("time")), true);
-    }
+    game(Object.values(listPlayer), $(".ball-choose").getAttribute("src"), 60 * Number($(".time-choose").getAttribute("time")));
 
     //open full screen
     if(!isFullscreen()) {

@@ -4,6 +4,7 @@ const app = express();
 const {cloudinaryConfig, storage} = require("./cloudinary");
 const cloudinary =  require("cloudinary").v2;
 const multer = require("multer");
+const cookieParser = require('cookie-parser');
 
 const server = require("http").Server(app);
 const io = require("socket.io")(server, {
@@ -21,6 +22,7 @@ app.set('view engine', 'ejs');
 app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 const upload = multer({ storage: storage });
 
@@ -33,11 +35,11 @@ app.get("/play", (req, res) => {
 })
 
 app.get("/join", (req, res) => {
-    res.render("join");
+    res.render("join", {avatar: req.cookies.avatar});
 })
 
 app.get("/remote", (req, res) => {
-    res.render("remote");
+    res.render("remote", {avatar: req.cookies.avatar});
 })
 
 app.post("/room", (req, res) => {
@@ -46,19 +48,28 @@ app.post("/room", (req, res) => {
     if(type === "error") {
         res.status(400).json({type, message});
     } else {
-        res.json({type: 'succcess'});
+        res.json({type: 'success'});
     }
 })
 
 app.post("/avatar", upload.single('avatar'),  (req, res) => {
-    const avatar = req?.file?.path;
-    res.json({avatar});
+    const avatar = handleAvatar(req?.file?.path);
+    res.cookie("avatar", avatar);
+    res.json({ok: true});
 })
 
 const roomList = {};
-let maxRoomId = 99999;
 const listPlayer = {};
 const listMaster = {};
+
+const randomId = () => {
+    while (true) {
+        const roomId = Math.floor(Math.random() * 999999) + 100000;
+        if(!roomList[roomId]) {
+            return roomId;
+        }
+    }
+}
 
 io.on('connection', async (socket) => {
     console.log('new user connected');
@@ -89,19 +100,15 @@ io.on('connection', async (socket) => {
     }
 
     if(type === 'create') {
-        roomList[ (++maxRoomId).toString()] = {masterId: socket.id, listPlayer: [], countBlue: 0, countRed: 0, isPlayed: false};
-        socket.emit('create', {roomId: maxRoomId.toString()});
-        listMaster[socket.id] = maxRoomId.toString();
+        const roomId = randomId().toString();
+        roomList[ roomId] = {masterId: socket.id, listPlayer: [], countBlue: 0, countRed: 0, isPlayed: false};
+        socket.emit('create', {roomId: roomId});
+        listMaster[socket.id] =roomId;
     }
 
     socket.on('move', (args) => {   
         io.to(roomList[listPlayer[socket.id].roomId].masterId).emit("move", {socketId: socket.id, move: args});
     })
-
-    // socket.on('player', (args) => {
-    //     io.to(roomList[listPlayer[socket.id].roomId].masterId).emit("player", {socketId: socket.id, player: args, team: listPlayer[socket.id].obj.team});
-    //     listPlayer[socket.id].obj.player = args;
-    // } )
 
     socket.on('changeteam', (args) => {
         const roomId = listPlayer[socket.id].roomId;
@@ -170,3 +177,7 @@ const auth = (roomId, password) => {
     }
 }
 
+const handleAvatar = (url) => {
+    const newAvatar = url.substring(0, url.lastIndexOf(".")) + ".png"
+    return newAvatar.replace("upload/", `upload/w_100,h_100,c_fill,r_max/`);
+}

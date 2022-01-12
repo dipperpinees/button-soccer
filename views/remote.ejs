@@ -16,14 +16,11 @@
         <button id='down' class="bi-caret-down-fill"> </button>
         <button id='right' class="bi-caret-right-fill"> </button>
         <button id='left' class="bi-caret-left-fill"> </button>
-        <!-- <img src="" alt="avatar"> -->
     </div>
     <i class="bi bi-fullscreen fullscreen"></i>
     <div class="waiting">
         <div class="waiting-choose">
-            <!-- <div class="waiting-choose-toggle">
-            </div> -->
-            <img src="" alt="avatar">
+            <img src=<%=avatar %> alt="avatar"> 
         </div>
         <i class="bi bi-link-45deg sharelink"></i>
         <button class="waiting-changeteam">Change Team</button>
@@ -31,5 +28,6 @@
     </div>
 </body>
 <script src="https://cdn.socket.io/4.4.0/socket.io.min.js" integrity="sha384-1fOn6VtTq3PWwfsOrk45LnYcGosJwzMHv+Xh/Jx5303FVOXzEnw0EpLv30mtjmlj" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.1/dist/js.cookie.min.js" ></script>
 <script src="/js/remote.js"></script>
 </html>

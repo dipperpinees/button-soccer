@@ -19,8 +19,6 @@ let currentTeam, currentPlayer;
 $ = document.querySelector.bind(document);
 $$ = document.querySelectorAll.bind(document);
 
-$(".waiting-choose img").src = localStorage.getItem("avatar");
-
 $(".fullscreen").onclick = () => {
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen();
@@ -34,7 +32,7 @@ $(".sharelink").onclick = () => {
     navigator.clipboard.writeText(`http://localhost:8001/join?roomId=${roomId}&password=${password}`);
 }
 const socket = io({
-    query: {type: "join", name: username, password: password, roomId: roomId, avatar: localStorage.getItem("avatar")}
+    query: {type: "join", name: username, password: password, roomId: roomId, avatar: Cookies.get('avatar')}
 });
 
 socket.on('status', (args) => {
