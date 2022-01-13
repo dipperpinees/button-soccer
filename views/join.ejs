@@ -1,13 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-<link rel="stylesheet" href="/styles/common.css">
-<link rel="stylesheet" href="/styles/join.css">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <%- include('./header.ejs', {title: `Join Room ${roomId ? `ID ${roomId}` : ""}`, description: "Join Room To Play Button Soccer NOW!"}) %>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Button Soccer</title>
-
+    <link rel="stylesheet" href="/styles/join.css">
 </head>
 <body id='body'>
     <form id='form'>

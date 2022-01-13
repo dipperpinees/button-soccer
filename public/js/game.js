@@ -708,6 +708,7 @@ for(let i = 0; i<listTime.length; i++) {
 socket.on("create", ({roomId}) => {
     $(".settings-roomid").textContent = `Room Id: ${roomId}`
 })
+
 socket.on("join", (args) => {
     const {socketId, name, team, avatar} = args;
     const li = document.createElement("li");
@@ -728,17 +729,13 @@ socket.on("join", (args) => {
     listPlayer[socketId] = args;
 })
 
-
 socket.on("status", (args) => {
     if(args.type === "leave") {
         $(`.li-${args.socketId}`).remove();
         delete listPlayer[args.socketId];
     }
 })
-// socket.on("player", ({socketId, player, team}) => {
-//     $(`.img-${socketId}`).src = `/img/${team}${player}.png`;
-//     listPlayer[socketId].player = player;
-// })
+
 socket.on("changeteam", ({socketId, name, team, avatar}) => {
     $(`.li-${socketId}`).remove();
     const li = document.createElement("li");

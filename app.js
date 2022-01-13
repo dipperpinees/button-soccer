@@ -35,7 +35,9 @@ app.get("/play", (req, res) => {
 })
 
 app.get("/join", (req, res) => {
-    res.render("join", {avatar: req.cookies.avatar});
+    const {roomId} = req.query;
+
+    res.render("join", {avatar: req.cookies.avatar, roomId: roomId});
 })
 
 app.get("/remote", (req, res) => {
@@ -165,18 +167,18 @@ const auth = (roomId, password) => {
     if(roomList[roomId]) {
 
         if(roomList[roomId].password && roomList[roomId].password !== password) {
-            return {type: "error", message: "Mật khẩu không chính xác"};
+            return {type: "error", message: "Wrong Password"};
         } else {
             if(roomList[roomId].countBlue + roomList[roomId].countRed === 12) {
-                return {type: "error", message: "Phòng đã đủ người"};
+                return {type: "error", message: "Room was enough people"};
             } else if(roomList[roomId].isPlayed){
-                return {type: "error", message: "Game đã bắt đầu"}
+                return {type: "error", message: "The game has already started"}
             } else {
                 return {type: "success"};
             }
         }
     } else {
-        return {type: "error", message: "Phòng không tồn tại"};
+        return {type: "error", message: "Room does not exist"};
     }
 }
 
