@@ -704,6 +704,7 @@ for(let i = 0; i<listTime.length; i++) {
         listTime[i].classList.add("time-choose");
     }
 }
+
 socket.on("create", ({roomId}) => {
     $(".settings-roomid").textContent = `Room Id: ${roomId}`
 })
@@ -714,7 +715,11 @@ socket.on("join", (args) => {
     const img = document.createElement("IMG");
     img.alt = name;
     img.src = avatar;
-    // img.classList.add(`img-${socketId}`);
+    img.onerror = () => {
+        console.log("Image Error")
+        img.src = avatar;
+    }
+    img.classList.add(`img-${socketId}`);
     li.appendChild(img);
     const p = document.createElement("p");
     p.textContent = name;
@@ -722,6 +727,8 @@ socket.on("join", (args) => {
     $(`.listplayer-${team}`).appendChild(li);
     listPlayer[socketId] = args;
 })
+
+
 socket.on("status", (args) => {
     if(args.type === "leave") {
         $(`.li-${args.socketId}`).remove();

@@ -61,10 +61,14 @@ app.post("/avatar", upload.single('avatar'),  (req, res) => {
 const roomList = {};
 const listPlayer = {};
 const listMaster = {};
-
 const randomId = () => {
     while (true) {
-        const roomId = Math.floor(Math.random() * 999999) + 100000;
+        const listChar = "abcdefghijklmnopqrstuvwxyz0123456789";
+        let roomId = "";
+        const lengthList = listChar.length;
+        for(let i = 0; i<6; i++) {
+            roomId += listChar[Math.floor(Math.random() * lengthList)];
+        }
         if(!roomList[roomId]) {
             return roomId;
         }
