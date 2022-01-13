@@ -712,7 +712,7 @@ socket.on("join", (args) => {
     const li = document.createElement("li");
     li.classList.add(`li-${socketId}`);
     const img = document.createElement("IMG");
-    img.alt = socketId;
+    img.alt = name;
     img.src = avatar;
     // img.classList.add(`img-${socketId}`);
     li.appendChild(img);
