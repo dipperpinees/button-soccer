@@ -61,6 +61,11 @@ app.post("/avatar", upload.single('avatar'),  (req, res) => {
     res.json({ok: true});
 })
 
+//404 not found
+app.get('*', function(req, res){
+    res.status(404).render('404');
+});
+
 const roomList = {};
 const listPlayer = {};
 const listMaster = {};
