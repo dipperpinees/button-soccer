@@ -1,5 +1,3 @@
-// const GAME_WIDTH = screen.width;
-// const GAME_HEIGHT = screen.height;
 const SCALE_SCREEN = 1;
 const GAME_WIDTH = window.screen.width * window.devicePixelRatio;
 const GAME_HEIGHT = window.screen.height * window.devicePixelRatio;
@@ -22,7 +20,7 @@ const WIDTH_PLAYER = 100 * SCALE_PLAYER;
 const WIDTH_BALL = 256 * SCALE_BALL;
 const SCALE_CORN = GAME_HEIGHT / 20 / 250;
 const SCALE_CENTER_CIRCLE = GAME_HEIGHT / 4 / 500;
-
+const SCALE_GOAL = GAME_HEIGHT / 4 / 149;
 const teamPos = {
     "blue": [
         {x: 3 / 8 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT / 2 - WIDTH_PLAYER / 2},
@@ -53,41 +51,41 @@ const handleAvatar = (avatar, team) => {
 const addPlayer = async (listPlayer, playerData) => {
     const handlePlayerCollide = (obj, name, team) => {
         obj.collides("wallleft1",  () => {
-            obj.move(200, 0);
+            obj.move(STRAIGHT_SPEED, 0);
         })
         obj.collides("wallleft2",  () => {
-            obj.move(200, 0);
+            obj.move(STRAIGHT_SPEED, 0);
         })
         obj.collides("goallefttop",  () => {
-            obj.move(0, 200);
+            obj.move(0, STRAIGHT_SPEED);
         })
         obj.collides("goalleftleft",  () => {
-            obj.move(200, 0);
+            obj.move(STRAIGHT_SPEED, 0);
         })
         obj.collides("goalleftbottom",  () => {
-            obj.move(0, -200);
+            obj.move(0, -STRAIGHT_SPEED);
         })
         obj.collides("goalrighttop",  () => {
-            obj.move(0, 200);
+            obj.move(0, STRAIGHT_SPEED);
         })
         obj.collides("goalrightright",  () => {
-            obj.move(-200, 0);
+            obj.move(-STRAIGHT_SPEED, 0);
         })
         obj.collides("goalrightbottom",  () => {
-            obj.move(0, -200);
+            obj.move(0, -STRAIGHT_SPEED);
         })
         obj.collides("wallright1",  () => {
-            obj.move(-200, 0);
+            obj.move(-STRAIGHT_SPEED, 0);
         })
         obj.collides("wallright2",  () => {
-            obj.move(-200, 0);
+            obj.move(-STRAIGHT_SPEED, 0);
         })
         obj.collides("walltop",  () => {
-            obj.move(0, 200);
+            obj.move(0, STRAIGHT_SPEED);
         })
         
         obj.collides("wallbottom",  () => {
-            obj.move(0, -200);
+            obj.move(0, -STRAIGHT_SPEED);
         })
     
         obj.collides("ball",  (s) => {
@@ -459,14 +457,15 @@ const handleShowGoal = (touchPlayer, touchTeam, time, teamGoal) => {
     // wait(2, () => {
     add([
         sprite("goal"),
-        pos(GAME_WIDTH / 2 - 434/2, GAME_HEIGHT / 2 - 149/2),
-        "goal"
+        pos(GAME_WIDTH / 2 - SCALE_GOAL*434/2, GAME_HEIGHT / 2 - SCALE_GOAL*149/2),
+        scale(SCALE_GOAL),
+        "goal",
     ])
     
     add([
-        pos(GAME_WIDTH / 2 - 434/2 + 20, GAME_HEIGHT / 2 + 149/2),
+        pos(GAME_WIDTH / 2 - SCALE_GOAL*434/2 + 40, GAME_HEIGHT / 2 + SCALE_GOAL*149/2),
         text(`${touchPlayer}  ${touchTeam !== teamGoal ? "(OG)" : ""} ${time}`, {
-            size: 24,
+            size: GAME_HEIGHT / 30,
         }),
         "goalplayer"
     ])
@@ -487,7 +486,7 @@ const game = (listPlayer, ballSrc, startTime) => {
         width: GAME_WIDTH,
         height: GAME_HEIGHT,
         fullscreen: true,
-        scale: SCALE_SCREEN,
+        scale: Number($(".graphics").value),
         debug: true,
     });
 
@@ -511,26 +510,26 @@ const game = (listPlayer, ballSrc, startTime) => {
 
     //score board
     const blueScore = add([
-        pos(GAME_WIDTH / 2 - 60, 8),
+        pos(GAME_WIDTH / 2 - GAME_WIDTH / 14, GAME_HEIGHT / 80),
         text("0", {
-            size: 20, // 48 pixels tall
+            size: GAME_WIDTH / 40, // 48 pixels tall
             font: 'sinko'
         }),
         {value: 0},
         color(66, 180, 230)
     ])
     const time = add([
-        pos(GAME_WIDTH / 2 - 30 , 8),
+        pos(GAME_WIDTH / 2  - GAME_WIDTH / 26, GAME_HEIGHT / 80),
         text("", {
-            size: 16,
+            size: GAME_WIDTH / 50,
             font: 'sinko',
         }),
         { value: startTime }
     ])
     const redScore = add([
-        pos(GAME_WIDTH / 2 + 50, 8),
+        pos(GAME_WIDTH / 2 + GAME_WIDTH / 16, GAME_HEIGHT / 80),
         text("0", {
-            size: 20, // 48 pixels tall
+            size: GAME_WIDTH / 40, // 48 pixels tall
             font: 'sinko'
         }),
         {value: 0},
@@ -696,6 +695,14 @@ const game = (listPlayer, ballSrc, startTime) => {
         isMove = true;
     })
 
+}
+
+$(".game-settings i").onclick = () => {
+    if($(".game-settings div").style.display === "block") {
+        $(".game-settings div").style.display = "none";
+    } else {
+        $(".game-settings div").style.display = "block";
+    }
 }
 
 for(let i = 0; i<listBall.length; i++) {

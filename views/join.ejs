@@ -72,11 +72,15 @@
 
     const validate = () => {
         if(!form.elements["roomid"].value) {
-            return "Room ID required"
+            return "Room ID required";
         }
 
         if(!form.elements["name"].value) {
-            return "Name required"
+            return "Name required";
+        }
+
+        if(form.elements["name"].value.length > 10) {
+            return "Maximum length of name is 10";
         }
         
         return "OK"
@@ -86,6 +90,7 @@
         e.preventDefault();
         if(validate() !== "OK") {
             showModal(validate());
+            return;
         }
         $(".loading").style.display = 'flex';
         const roomId = form.elements["roomid"].value;

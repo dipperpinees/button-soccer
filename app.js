@@ -158,6 +158,7 @@ io.on('connection', async (socket) => {
         } 
 
         if(listPlayer[socket.id]) {
+            if(!roomList[listPlayer[socket.id].roomId]) return;
             io.to(roomList[listPlayer[socket.id].roomId].masterId).emit('status', {type: 'leave', socketId: socket.id});
             roomList[listPlayer[socket.id].roomId].listPlayer = roomList[listPlayer[socket.id].roomId].listPlayer.filter((player) => player.socketId !== socket.id);
             if(listPlayer[socket.id].obj.team === 'blue') {
