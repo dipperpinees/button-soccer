@@ -63,9 +63,10 @@ app.post("/avatar", upload.single('avatar'),  (req, res) => {
 const roomList = {};
 const listPlayer = {};
 const listMaster = {};
+
 const randomId = () => {
+    const listChar = "abcdefghijklmnopqrstuvwxyz0123456789";
     while (true) {
-        const listChar = "abcdefghijklmnopqrstuvwxyz0123456789";
         let roomId = "";
         const lengthList = listChar.length;
         for(let i = 0; i<6; i++) {
