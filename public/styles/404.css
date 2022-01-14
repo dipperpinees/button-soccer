@@ -1,11 +1,20 @@
-* {
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,700&display=swap');
+
+*{
   -webkit-box-sizing: border-box;
-          box-sizing: border-box;
+  box-sizing: border-box;
+  font-family: 'Roboto Mono', monospace;
 }
 
 body {
   padding: 0;
   margin: 0;
+  background-image: url('/img/text.png'); 
+  background-color: #cccccc; 
+  height: 500px; 
+  background-position: center; 
+  background-repeat: no-repeat;
+  background-size: cover; 
 }
 
 #notfound {
@@ -37,27 +46,19 @@ body {
 }
 
 .notfound .notfound-404 h1 {
-  font-family: 'Titillium Web', sans-serif;
   font-size: 186px;
   font-weight: 900;
   margin: 0px;
   text-transform: uppercase;
-  background: url('/img/text.png');
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-size: cover;
-  background-position: center;
 }
 
 .notfound h2 {
-  font-family: 'Titillium Web', sans-serif;
   font-size: 26px;
   font-weight: 700;
   margin: 0;
 }
 
 .notfound p {
-  font-family: 'Montserrat', sans-serif;
   font-size: 14px;
   font-weight: 500;
   margin-bottom: 0px;
@@ -65,7 +66,6 @@ body {
 }
 
 .notfound a {
-  font-family: 'Titillium Web', sans-serif;
   display: inline-block;
   text-transform: uppercase;
   color: #fff;
