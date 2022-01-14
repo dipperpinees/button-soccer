@@ -41,7 +41,8 @@ app.get("/join", (req, res) => {
 })
 
 app.get("/remote", (req, res) => {
-    res.render("remote", {avatar: req.cookies.avatar});
+    const {name} = req.query;
+    res.render("remote", {avatar: req.cookies.avatar, name: name});
 })
 
 app.post("/room", (req, res) => {

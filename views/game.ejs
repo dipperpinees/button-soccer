@@ -1,16 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/styles/common.css">
+<%- include('./header.ejs', {title: "Button Soccer", description: "Funny soccer game play with your friends"}) %>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <link rel="stylesheet" href="/styles/game.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
-    <title>Document</title>
 </head>
 <body id='body'>
-
     <div class='wait'>
         <div class='blueteam'>
             <h4>Blue Team</h4>
@@ -18,7 +13,7 @@
             </ul>
         </div>
         <div class='settings'>
-            <h3 class='settings-roomid'>100001</h3>
+            <h3 class='settings-roomid'></h3>
             <div class="lastmatch">
                 <h5>Last Match</h5>
                 <div class="lastmatch-detail">
