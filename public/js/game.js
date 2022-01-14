@@ -1,37 +1,44 @@
-const GAME_WIDTH = screen.width;
-const GAME_HEIGHT = screen.height;
+// const GAME_WIDTH = screen.width;
+// const GAME_HEIGHT = screen.height;
+const SCALE_SCREEN = 1;
+const GAME_WIDTH = window.screen.width * window.devicePixelRatio;
+const GAME_HEIGHT = window.screen.height * window.devicePixelRatio;
 const PITCH_X = GAME_WIDTH / 12;
 const PITCH_Y = GAME_HEIGHT / 16;
 const SCALE_BALL = GAME_HEIGHT / 22 / 256;
 const SCALE_PLAYER = GAME_HEIGHT / 22 / 100;
 const STADIUM_WIDTH = GAME_WIDTH - PITCH_X * 2;
 const STADIUM_HEIGHT = GAME_HEIGHT - PITCH_Y * 2;
-const STRAIGHT_SPEED = screen.width / 7;
+const STRAIGHT_SPEED = GAME_WIDTH / 7;
 const DIAGONAL_SPEED = STRAIGHT_SPEED/2 * Math.sqrt(2);
-const BALL_SPEED = screen.width / 6.5;
+const BALL_SPEED = GAME_WIDTH / 6.5;
 $ = document.querySelector.bind(document);
 $$ = document.querySelectorAll.bind(document);
 const socket = io({query: {type: 'create'}});
 const listBall = $$(".settings-ball li");
 const listTime = $$(".settings-time li");
 const listPlayer = {};
+const WIDTH_PLAYER = 100 * SCALE_PLAYER;
+const WIDTH_BALL = 256 * SCALE_BALL;
+const SCALE_CORN = GAME_HEIGHT / 20 / 250;
+const SCALE_CENTER_CIRCLE = GAME_HEIGHT / 4 / 500;
 
 const teamPos = {
     "blue": [
-        {x: 3 / 8 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT / 2 - 100 * SCALE_PLAYER / 2},
-        {x: 1 / 4 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT / 2 - 100 * SCALE_PLAYER / 2},
+        {x: 3 / 8 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT / 2 - WIDTH_PLAYER / 2},
+        {x: 1 / 4 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT / 2 - WIDTH_PLAYER / 2},
         {x: 1 / 4 * STADIUM_WIDTH + PITCH_X, y: PITCH_Y + 1/8 * STADIUM_HEIGHT},
-        {x: 1 / 4 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/8 * STADIUM_HEIGHT - 100 * SCALE_PLAYER },
-        {x: 1 / 8 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/4 * STADIUM_HEIGHT - 100 * SCALE_PLAYER },
+        {x: 1 / 4 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/8 * STADIUM_HEIGHT - WIDTH_PLAYER },
+        {x: 1 / 8 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/4 * STADIUM_HEIGHT - WIDTH_PLAYER },
         {x: 1 / 8 * STADIUM_WIDTH + PITCH_X, y: PITCH_Y + 1/4 * STADIUM_HEIGHT},
     ],
     "red": [
-        {x: GAME_WIDTH - 100*SCALE_PLAYER -  3 / 8 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT / 2 - 100 * SCALE_PLAYER / 2},
-        {x: GAME_WIDTH - 100*SCALE_PLAYER - 1 / 4 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT / 2 - 100 * SCALE_PLAYER / 2},
-        {x: GAME_WIDTH - 100*SCALE_PLAYER- 1 / 4 * STADIUM_WIDTH - PITCH_X, y: PITCH_Y + 1/8 * STADIUM_HEIGHT},
-        {x: GAME_WIDTH - 100*SCALE_PLAYER - 1 / 4 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/8 * STADIUM_HEIGHT - 100 * SCALE_PLAYER },
-        {x: GAME_WIDTH - 100*SCALE_PLAYER - 1 / 8 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/4 * STADIUM_HEIGHT - 100 * SCALE_PLAYER },
-        {x: GAME_WIDTH - 100*SCALE_PLAYER - 1 / 8 * STADIUM_WIDTH - PITCH_X, y: PITCH_Y + 1/4 * STADIUM_HEIGHT},
+        {x: GAME_WIDTH - WIDTH_PLAYER -  3 / 8 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT / 2 - WIDTH_PLAYER / 2},
+        {x: GAME_WIDTH - WIDTH_PLAYER - 1 / 4 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT / 2 - WIDTH_PLAYER / 2},
+        {x: GAME_WIDTH - WIDTH_PLAYER- 1 / 4 * STADIUM_WIDTH - PITCH_X, y: PITCH_Y + 1/8 * STADIUM_HEIGHT},
+        {x: GAME_WIDTH - WIDTH_PLAYER - 1 / 4 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/8 * STADIUM_HEIGHT - WIDTH_PLAYER },
+        {x: GAME_WIDTH - WIDTH_PLAYER - 1 / 8 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/4 * STADIUM_HEIGHT - WIDTH_PLAYER },
+        {x: GAME_WIDTH - WIDTH_PLAYER - 1 / 8 * STADIUM_WIDTH - PITCH_X, y: PITCH_Y + 1/4 * STADIUM_HEIGHT},
     ]
 }
 
@@ -86,9 +93,9 @@ const addPlayer = async (listPlayer, playerData) => {
         obj.collides("ball",  (s) => {
             s.value.touch = name;
             s.value.touchTeam = team;
-            obj.move(8*(obj.pos.x-s.pos.x), 8*(obj.pos.y-s.pos.y));
-            const vectoX = s.pos.x-obj.pos.x;
-            const vectoY = s.pos.y-obj.pos.y;
+            const vectoX = (s.pos.x + WIDTH_BALL) / 2 - (obj.pos.x + WIDTH_PLAYER) / 2;
+            const vectoY = (s.pos.y + WIDTH_BALL) / 2- (obj.pos.y + WIDTH_PLAYER) / 2;
+            obj.move(-8*vectoX, -8*vectoY);
             const countStepMove = Math.sqrt((Math.pow(BALL_SPEED + 40, 2))/(Math.pow(vectoX, 2) +  Math.pow(vectoY, 2) ))
             s.value.x += countStepMove * vectoX;
             s.value.y += countStepMove * vectoY;
@@ -126,7 +133,7 @@ const addBall = () => {
     //add ball and handle ball collide
     const ball = add([
         sprite("ball"),
-        pos(GAME_WIDTH / 2 - 256*SCALE_BALL/2, GAME_HEIGHT / 2 - 256*SCALE_BALL/2),
+        pos(GAME_WIDTH / 2 - WIDTH_BALL/2, GAME_HEIGHT / 2 - WIDTH_BALL/2),
         area(),
         scale(SCALE_BALL),
         {value: {x: 0, y: 0, touch: null, touchTeam: null}},
@@ -196,39 +203,39 @@ const buildStadium = () => {
     }
     //center circle
     add([
-        pos(GAME_WIDTH / 2- 500*0.25, GAME_HEIGHT / 2 - 500*0.25),
+        pos(GAME_WIDTH / 2- 500*SCALE_CENTER_CIRCLE / 2, GAME_HEIGHT / 2 - 500*SCALE_CENTER_CIRCLE / 2),
         // circle(100),
         sprite('circle'),
-        scale(0.5),
+        scale(SCALE_CENTER_CIRCLE),
         "linecircle"
     ])
     add([
-        pos(PITCH_X, GAME_HEIGHT - PITCH_Y - 250*0.2),
+        pos(PITCH_X, GAME_HEIGHT - PITCH_Y - SCALE_CORN * 250),
         sprite('corn'),
-        scale(0.2),
+        scale(SCALE_CORN),
         "bottomleftcorn"
     ])
 
     add([
-        pos(PITCH_X + 250*0.2, PITCH_Y),
+        pos(PITCH_X + SCALE_CORN * 250, PITCH_Y),
         sprite('corn'),
-        scale(0.2),
+        scale(SCALE_CORN),
         rotate(90),
         "topleftcorn"
     ])
 
     add([
-        pos(GAME_WIDTH - PITCH_X , PITCH_Y + 250 * 0.2),
+        pos(GAME_WIDTH - PITCH_X , PITCH_Y + SCALE_CORN * 250),
         sprite('corn'),
-        scale(0.2),
+        scale(SCALE_CORN),
         rotate(180),
         "toprightcorn"
     ])
 
     add([
-        pos(GAME_WIDTH - PITCH_X - 250*0.2 , GAME_HEIGHT - PITCH_Y),
+        pos(GAME_WIDTH - PITCH_X - SCALE_CORN * 250 , GAME_HEIGHT - PITCH_Y),
         sprite('corn'),
-        scale(0.2),
+        scale(SCALE_CORN),
         rotate(270),
         "bottomrightcorn"
     ])
@@ -441,7 +448,7 @@ const resetBall = (ball) => {
     ball.value.x = 0;
     ball.value.y = 0;
 
-    ball.moveTo(GAME_WIDTH / 2 - 256*SCALE_BALL/2, GAME_HEIGHT / 2 - 256*SCALE_BALL/2);
+    ball.moveTo(GAME_WIDTH / 2 - WIDTH_BALL/2, GAME_HEIGHT / 2 - WIDTH_BALL/2);
     every("player", (s) => {
         const {startX, startY} = s.value;
         s.moveTo(startX, startY)
@@ -480,6 +487,7 @@ const game = (listPlayer, ballSrc, startTime) => {
         width: GAME_WIDTH,
         height: GAME_HEIGHT,
         fullscreen: true,
+        scale: SCALE_SCREEN,
         debug: true,
     });
 
@@ -689,7 +697,6 @@ const game = (listPlayer, ballSrc, startTime) => {
     })
 
 }
-
 
 for(let i = 0; i<listBall.length; i++) {
     listBall[i].onclick = (e) => {
