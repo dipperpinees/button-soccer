@@ -1,397 +1,52 @@
-const GAME_WIDTH = window.screen.width * window.devicePixelRatio;
-const GAME_HEIGHT = window.screen.height * window.devicePixelRatio;
-const PITCH_X = GAME_WIDTH / 12;
-const PITCH_Y = GAME_HEIGHT / 16;
-const SCALE_BALL = GAME_HEIGHT / 24 / 256;
-const SCALE_PLAYER = GAME_HEIGHT / 20 / 100;
-const STADIUM_WIDTH = GAME_WIDTH - PITCH_X * 2;
-const STADIUM_HEIGHT = GAME_HEIGHT - PITCH_Y * 2;
-const STRAIGHT_PLAYER_SPEED = GAME_WIDTH / 7;
-const DIAGONAL_PLAYER_SPEED = STRAIGHT_PLAYER_SPEED/2 * Math.sqrt(2);
-const STRAIGHT_BALL_SPEED = GAME_WIDTH / 3.4;
-const DIAGONAL_BALL_SPEED = STRAIGHT_BALL_SPEED/2 * Math.sqrt(2);
 $ = document.querySelector.bind(document);
 $$ = document.querySelectorAll.bind(document);
 const socket = io({query: {type: 'create'}});
 const listBall = $$(".settings-ball li");
 const listTime = $$(".settings-time li");
-// const listPlayer = {"test": {socketId: "test", name: "hiep",team: "blue", avatar: "https://res.cloudinary.com/uethehe/image/upload/w_100,h_100,c_fill,r_max/v1642120588/DEV/kwv5fpkfkbj08zuwq9dp.png"}};
 const listPlayer = {};
-const WIDTH_PLAYER = 100 * SCALE_PLAYER;
-const WIDTH_BALL = 256 * SCALE_BALL;
-const SCALE_CORN = GAME_HEIGHT / 20 / 250;
-const SCALE_CENTER_CIRCLE = GAME_HEIGHT / 4 / 500;
-const SCALE_GOAL = GAME_HEIGHT / 4 / 149;
-const teamPos = {
-    "blue": [
-        {x: 3 / 8 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT / 2 - WIDTH_PLAYER / 2},
-        {x: 1 / 4 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT / 2 - WIDTH_PLAYER / 2},
-        {x: 1 / 4 * STADIUM_WIDTH + PITCH_X, y: PITCH_Y + 1/8 * STADIUM_HEIGHT},
-        {x: 1 / 4 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/8 * STADIUM_HEIGHT - WIDTH_PLAYER },
-        {x: 1 / 8 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/4 * STADIUM_HEIGHT - WIDTH_PLAYER },
-        {x: 1 / 8 * STADIUM_WIDTH + PITCH_X, y: PITCH_Y + 1/4 * STADIUM_HEIGHT},
-    ],
-    "red": [
-        {x: GAME_WIDTH - WIDTH_PLAYER -  3 / 8 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT / 2 - WIDTH_PLAYER / 2},
-        {x: GAME_WIDTH - WIDTH_PLAYER - 1 / 4 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT / 2 - WIDTH_PLAYER / 2},
-        {x: GAME_WIDTH - WIDTH_PLAYER- 1 / 4 * STADIUM_WIDTH - PITCH_X, y: PITCH_Y + 1/8 * STADIUM_HEIGHT},
-        {x: GAME_WIDTH - WIDTH_PLAYER - 1 / 4 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/8 * STADIUM_HEIGHT - WIDTH_PLAYER },
-        {x: GAME_WIDTH - WIDTH_PLAYER - 1 / 8 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/4 * STADIUM_HEIGHT - WIDTH_PLAYER },
-        {x: GAME_WIDTH - WIDTH_PLAYER - 1 / 8 * STADIUM_WIDTH - PITCH_X, y: PITCH_Y + 1/4 * STADIUM_HEIGHT},
-    ]
-}
-
-const handleAvatar = (avatar, team) => {
-    if(team === "blue") {
-        return avatar.replace(",r_max/", `,r_max,bo_6px_solid_royalblue/`);
-    } else {
-        return avatar.replace(",r_max/", `,r_max,bo_6px_solid_indianred/`);
-    }
-}
-
-const addPlayer = async (listPlayer, playerData) => {
-    const handlePlayerCollide = (obj, name, team, socketId) => {
-        // console.log(socketId);
-        obj.collides("wallleft",  () => {
-            obj.move(STRAIGHT_PLAYER_SPEED*2.5, 0);
-        })
-        obj.collides("wallright",  () => {
-            obj.move(-STRAIGHT_PLAYER_SPEED*2.5, 0);
-        })
-        obj.collides("walltop",  () => {
-            obj.move(0, STRAIGHT_PLAYER_SPEED*2.5);
-        })
-        obj.collides("wallbottom",  () => {
-            obj.move(0, -STRAIGHT_PLAYER_SPEED*2.5);
-        })
-    
-        obj.collides("ball",  (s) => {
-            if(s.value.touchId === socketId) {
-                return;
-            }
-            s.value.touch = name;
-            s.value.touchTeam = team;
-            s.value.touchId = socketId;
-            s.value.direction = playerData[socketId].player.value.direction;
-        })
-    }
-    let countBlue = -1;
-    let countRed = -1;
-
-    //add player and handle player collide
-    listPlayer.forEach(async (player) => {
-        loadSprite(`${player.team}_${player.socketId}`, handleAvatar(player.avatar, player.team));
-        const count = player.team === 'blue' ? ++countBlue : ++countRed;
-        playerData[player.socketId] = {};
-        playerData[player.socketId]["defaultPos"] = {x: teamPos[player.team][count].x, y: teamPos[player.team][count].y}
-        playerData[player.socketId]["player"] = add([
-            sprite(`${player.team}_${player.socketId}`),
-            pos(teamPos[player.team][count].x, teamPos[player.team][count].y),
-            area(),
-            scale(SCALE_PLAYER),
-            "player",
-            {value: {name: player.name, socketId: player.socketId, team: player.team, startX: teamPos[player.team][count].x, startY: teamPos[player.team][count].y, x: 0, y: 0, direction: "top"}}
-        ])
-    })
-
-    every("player", (s) => {
-        s.collides("player", (t) => {
-            s.move(8*(s.pos.x-t.pos.x), 8*(s.pos.y-t.pos.y));
-        })
-
-        handlePlayerCollide(s, s.value.name, s.value.team, s.value.socketId);
-    })
-}
-
-const buildStadium = () => {
-    for(let i = 0; i < 12; i++) {
-        add([
-            pos(PITCH_X * i , 0),
-            rect(PITCH_X / 2, GAME_HEIGHT),
-            color(46, 204, 113)
-        ]) 
-    }
-    //center circle
-    add([
-        pos(GAME_WIDTH / 2- 500*SCALE_CENTER_CIRCLE / 2, GAME_HEIGHT / 2 - 500*SCALE_CENTER_CIRCLE / 2),
-        // circle(100),
-        sprite('circle'),
-        scale(SCALE_CENTER_CIRCLE),
-        "linecircle"
-    ])
-    add([
-        pos(PITCH_X, GAME_HEIGHT - PITCH_Y - SCALE_CORN * 250),
-        sprite('corn'),
-        scale(SCALE_CORN),
-        "bottomleftcorn"
-    ])
-
-    add([
-        pos(PITCH_X + SCALE_CORN * 250, PITCH_Y),
-        sprite('corn'),
-        scale(SCALE_CORN),
-        rotate(90),
-        "topleftcorn"
-    ])
-
-    add([
-        pos(GAME_WIDTH - PITCH_X , PITCH_Y + SCALE_CORN * 250),
-        sprite('corn'),
-        scale(SCALE_CORN),
-        rotate(180),
-        "toprightcorn"
-    ])
-
-    add([
-        pos(GAME_WIDTH - PITCH_X - SCALE_CORN * 250 , GAME_HEIGHT - PITCH_Y),
-        sprite('corn'),
-        scale(SCALE_CORN),
-        rotate(270),
-        "bottomrightcorn"
-    ])
-
-    add([
-        pos(GAME_WIDTH / 2 - 2, PITCH_Y),
-        rect(4, STADIUM_HEIGHT),
-        "linecenter"
-    ])
-
-    add([
-        pos(GAME_WIDTH / 2, GAME_HEIGHT / 2),
-        circle(8),
-        "centerdot"
-    ])
-
-    add([
-        pos(PITCH_X, PITCH_Y + 1/4 * (STADIUM_HEIGHT)),
-        rect( 1/8 * (STADIUM_WIDTH), 4),
-        "penlefttop"
-    ])
-
-    add([
-        pos(PITCH_X, PITCH_Y + 3/4 * (STADIUM_HEIGHT)),
-        rect( 1/8 * (STADIUM_WIDTH), 4),
-        "penleftbottom"
-    ])
-
-    add([
-        pos(PITCH_X + 1/8 * (STADIUM_WIDTH), PITCH_Y + 1/4 * (STADIUM_HEIGHT)),
-        rect( 4, 1/2 * (STADIUM_HEIGHT) + 4),
-        "penleftright"
-    ])
-
-    add([
-        sprite('pencircle'),
-        pos(PITCH_X + 1/8 * (STADIUM_WIDTH) + 4, PITCH_Y + 1/3 * STADIUM_HEIGHT ),
-        scale(1/3 * (STADIUM_HEIGHT) / 472),
-        'penleftcirle'
-    ])
-
-    add([
-        pos(GAME_WIDTH - PITCH_X - 1/8 * (STADIUM_WIDTH), PITCH_Y + 1/4 * STADIUM_HEIGHT),
-        rect( 1/8 * (STADIUM_WIDTH), 4),
-        "penrighttop"
-    ])
-
-    add([
-        pos(GAME_WIDTH - PITCH_X - 1/8 * (STADIUM_WIDTH), PITCH_Y + 1/4 * STADIUM_HEIGHT),
-        rect( 4, 1/2 * (STADIUM_HEIGHT) + 4),
-        "penrightleft"
-    ])
-
-    add([
-        pos(GAME_WIDTH - PITCH_X - 1/8 * (STADIUM_WIDTH), PITCH_Y + 3/4 * STADIUM_HEIGHT),
-        rect( 1/8 * (STADIUM_WIDTH), 4),
-        "penrightbottom"
-    ])
-
-    add([
-        sprite('pencircle'),
-        pos(GAME_WIDTH - PITCH_X - 1/8 * (STADIUM_WIDTH) + 4, PITCH_Y + 2/3 * STADIUM_HEIGHT),
-        scale(1/3 * (STADIUM_HEIGHT) / 472),
-        rotate(180),
-        'penleftcirle'
-    ])
-
-    add([
-        pos(PITCH_X, PITCH_Y),
-        rect(4, 1/3*(STADIUM_HEIGHT)),
-        // outline(0.6),
-        area(),
-        "wallleft",
-    ])
-    
-    add([
-        pos(PITCH_X, PITCH_Y + 2/3*(STADIUM_HEIGHT) ),
-        rect(4, 1/3*(STADIUM_HEIGHT)),
-        // outline(0.6),
-        area(),
-        "wallleft"
-    ])
-    
-    add([
-        pos(PITCH_X - 1/6*(STADIUM_HEIGHT), PITCH_Y + 2/3*(STADIUM_HEIGHT) ),
-        rect(1/6*(STADIUM_HEIGHT), 4),
-        // outline(0.6),
-        area(),
-        "wallbottom"
-    ])
-    
-    add([
-        pos(PITCH_X - 1/6*(STADIUM_HEIGHT), PITCH_Y + 1/3*(STADIUM_HEIGHT) - 4 ),
-        rect(1/6*(STADIUM_HEIGHT), 4),
-        // outline(0.6),
-        area(),
-        "walltop"
-    ])
-    
-    add([
-        pos(PITCH_X - 1/6*(STADIUM_HEIGHT), PITCH_Y + 1/3*(STADIUM_HEIGHT) ),
-        rect(4, 1/3*(STADIUM_HEIGHT)),
-        // outline(0.6),
-        area(),
-        "wallleft"
-    ])
-
-    add([
-        sprite('net'),
-        pos(PITCH_X - 1/6*(STADIUM_HEIGHT) + 4, PITCH_Y + 1/3*(STADIUM_HEIGHT) ),
-        scale(1/3*(STADIUM_HEIGHT)/168),
-        "leftnet",
-    ])
-    
-    add([
-        pos(PITCH_X, PITCH_Y),
-        rect(STADIUM_WIDTH, 4),
-        // outline(0.6),
-        area(),
-        "walltop"
-    ])
-    
-    add([
-        pos(GAME_WIDTH - 4 - PITCH_X, PITCH_Y),
-        rect(4, 1/3*(STADIUM_HEIGHT)),
-        // outline(0.6),
-        area(),
-        "wallright"
-    ])
-    
-    add([
-        pos(GAME_WIDTH - 4 - PITCH_X, PITCH_Y + 2/3*(STADIUM_HEIGHT)),
-        rect(4, 1/3*(STADIUM_HEIGHT)),
-        // outline(0.6),
-        area(),
-        "wallright"
-    ])
-    
-    add([
-        pos(GAME_WIDTH - 4 - PITCH_X, PITCH_Y + 1/3*(STADIUM_HEIGHT) - 4),
-        rect(1/6*(STADIUM_HEIGHT), 4),
-        // outline(0.6),
-        area(),
-        "walltop"
-    ])
-    
-    add([
-        pos(GAME_WIDTH - PITCH_X - 4 + 1/6*(STADIUM_HEIGHT), PITCH_Y + 1/3*(STADIUM_HEIGHT) - 4 ),
-        rect(4, 1/3*(STADIUM_HEIGHT) + 4),
-        // outline(0.6),
-        area(),
-        "wallright"
-    ])
-    
-    add([
-        pos(GAME_WIDTH - PITCH_X, PITCH_Y + 2/3*(STADIUM_HEIGHT) ),
-        rect(1/6*(STADIUM_HEIGHT), 4),
-        // outline(0.6),
-        area(),
-        "wallbottom"
-    ])
-    
-    add([
-        sprite('net'),
-        pos(GAME_WIDTH - 4 - PITCH_X, PITCH_Y + 1/3*(STADIUM_HEIGHT)),
-        scale(1/3*(STADIUM_HEIGHT)/168),
-        "rightnet"
-    ])
-
-    add([
-        pos(PITCH_X, GAME_HEIGHT - 4 - PITCH_Y),
-        rect(STADIUM_WIDTH, 4),
-        // outline(0.6),
-        area(),
-        "wallbottom"
-    ])
-}
-
-const handleShowLog = (blueScore, redScore, logGame) => {
-    $(".lastmatch-detail > p").textContent = `${blueScore} - ${redScore}`;
-    while ( $(".blue-detail").hasChildNodes()) {
-        $(".blue-detail").removeChild( $(".blue-detail").lastChild);
-    }
-    while ( $(".red-detail").hasChildNodes()) {
-        $(".red-detail").removeChild( $(".red-detail").lastChild);
-    }
-    Object.keys(logGame["blue"]).forEach(key => {
-        const div = document.createElement('div');
-        div.textContent = `${key} (${logGame["blue"][key].join(", ")})`;
-        $(".blue-detail").appendChild(div);
-    })
-
-    Object.keys(logGame["red"]).forEach(key => {
-        const div = document.createElement('div');
-        div.textContent = `${key} (${logGame["red"][key].join(", ")})`;
-        $(".red-detail").appendChild(div);
-    })
-
-}
-
-const handleSaveLog = (logGame, player, teamGoal, isOG, time) => {
-    if(logGame[teamGoal][player]) {
-        logGame[teamGoal][player].push(`${time}${isOG ? "-OG" : ""}`);
-    } else {
-        logGame[teamGoal][player] = [`${time}${isOG ? "-OG" : ""}`];
-    }
-}
-
-const resetBall = (ball) => {
-    ball.value.touchId = null;
-    ball.value.x = 0;
-    ball.value.y = 0;
-    
-    ball.moveTo(GAME_WIDTH / 2 - WIDTH_BALL/2, GAME_HEIGHT / 2 - WIDTH_BALL/2);
-    every("player", (s) => {
-        const {startX, startY} = s.value;
-        s.moveTo(startX, startY)
-    })
-}
-
-const handleShowGoal = (touchPlayer, touchTeam, time, teamGoal) => {
-    // wait(2, () => {
-    add([
-        sprite("goal"),
-        pos(GAME_WIDTH / 2 - SCALE_GOAL*434/2, GAME_HEIGHT / 2 - SCALE_GOAL*149/2),
-        scale(SCALE_GOAL),
-        "goal",
-    ])
-    
-    add([
-        pos(GAME_WIDTH / 2 - SCALE_GOAL*434/2 + 40, GAME_HEIGHT / 2 + SCALE_GOAL*149/2),
-        text(`${touchPlayer}  ${touchTeam !== teamGoal ? "(OG)" : ""} ${time}`, {
-            size: GAME_HEIGHT / 30,
-        }),
-        "goalplayer"
-    ])
-        
-}
 
 const game = (listPlayer, ballSrc, startTime) => {
+    const GAME_WIDTH = window.screen.width * window.devicePixelRatio;
+    const GAME_HEIGHT = window.screen.height * window.devicePixelRatio;
+    const PITCH_X = GAME_WIDTH / 12;
+    const PITCH_Y = GAME_HEIGHT / 16;
+    const SCALE_BALL = GAME_HEIGHT / 24 / 256;
+    const SCALE_PLAYER = GAME_HEIGHT / 20 / 100;
+    const STADIUM_WIDTH = GAME_WIDTH - PITCH_X * 2;
+    const STADIUM_HEIGHT = GAME_HEIGHT - PITCH_Y * 2;
+    const STRAIGHT_PLAYER_SPEED = GAME_WIDTH / 7;
+    const DIAGONAL_PLAYER_SPEED = STRAIGHT_PLAYER_SPEED/2 * Math.sqrt(2);
+    const STRAIGHT_BALL_SPEED = GAME_WIDTH / 3.4;
+    const DIAGONAL_BALL_SPEED = STRAIGHT_BALL_SPEED/2 * Math.sqrt(2);
+    const WIDTH_PLAYER = 100 * SCALE_PLAYER;
+    const WIDTH_BALL = 256 * SCALE_BALL;
+    const SCALE_CORN = GAME_HEIGHT / 20 / 250;
+    const SCALE_CENTER_CIRCLE = GAME_HEIGHT / 4 / 500;
+    const SCALE_GOAL = GAME_HEIGHT / 4 / 149;
     let isGoal = false;
     let isMove = false;
     let playerData = {};
     const logGame = {
         "blue": {},
         "red": {}
+    }
+    const teamPos = {
+        "blue": [
+            {x: 3 / 8 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT / 2 - WIDTH_PLAYER / 2},
+            {x: 1 / 4 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT / 2 - WIDTH_PLAYER / 2},
+            {x: 1 / 4 * STADIUM_WIDTH + PITCH_X, y: PITCH_Y + 1/8 * STADIUM_HEIGHT},
+            {x: 1 / 4 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/8 * STADIUM_HEIGHT - WIDTH_PLAYER },
+            {x: 1 / 8 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/4 * STADIUM_HEIGHT - WIDTH_PLAYER },
+            {x: 1 / 8 * STADIUM_WIDTH + PITCH_X, y: PITCH_Y + 1/4 * STADIUM_HEIGHT},
+        ],
+        "red": [
+            {x: GAME_WIDTH - WIDTH_PLAYER -  3 / 8 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT / 2 - WIDTH_PLAYER / 2},
+            {x: GAME_WIDTH - WIDTH_PLAYER - 1 / 4 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT / 2 - WIDTH_PLAYER / 2},
+            {x: GAME_WIDTH - WIDTH_PLAYER- 1 / 4 * STADIUM_WIDTH - PITCH_X, y: PITCH_Y + 1/8 * STADIUM_HEIGHT},
+            {x: GAME_WIDTH - WIDTH_PLAYER - 1 / 4 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/8 * STADIUM_HEIGHT - WIDTH_PLAYER },
+            {x: GAME_WIDTH - WIDTH_PLAYER - 1 / 8 * STADIUM_WIDTH - PITCH_X, y: GAME_HEIGHT - PITCH_Y - 1/4 * STADIUM_HEIGHT - WIDTH_PLAYER },
+            {x: GAME_WIDTH - WIDTH_PLAYER - 1 / 8 * STADIUM_WIDTH - PITCH_X, y: PITCH_Y + 1/4 * STADIUM_HEIGHT},
+        ]
     }
 
     kaboom({
@@ -413,6 +68,350 @@ const game = (listPlayer, ballSrc, startTime) => {
     loadSound("whistle", "/sound/whistle.mp3");
     loadSound("endwhistle", "/sound/endwhistle.mp3");
     loadSprite("ball", ballSrc);
+    
+    const handleAvatar = (avatar, team) => {
+        if(team === "blue") {
+            return avatar.replace(",r_max/", `,r_max,bo_6px_solid_royalblue/`);
+        } else {
+            return avatar.replace(",r_max/", `,r_max,bo_6px_solid_indianred/`);
+        }
+    }
+    
+    const addPlayer = async (listPlayer, playerData) => {
+        const handlePlayerCollide = (obj, name, team, socketId) => {
+            obj.collides("wallleft",  () => {
+                obj.move(STRAIGHT_PLAYER_SPEED*2.5, 0);
+            })
+            obj.collides("wallright",  () => {
+                obj.move(-STRAIGHT_PLAYER_SPEED*2.5, 0);
+            })
+            obj.collides("walltop",  () => {
+                obj.move(0, STRAIGHT_PLAYER_SPEED*2.5);
+            })
+            obj.collides("wallbottom",  () => {
+                obj.move(0, -STRAIGHT_PLAYER_SPEED*2.5);
+            })
+        
+            obj.collides("ball",  (s) => {
+                if(s.value.touchId === socketId) {
+                    return;
+                }
+                s.value.touch = name;
+                s.value.touchTeam = team;
+                s.value.touchId = socketId;
+                s.value.direction = playerData[socketId].player.value.direction;
+            })
+        }
+        let countBlue = -1;
+        let countRed = -1;
+    
+        //add player and handle player collide
+        listPlayer.forEach(async (player) => {
+            loadSprite(`${player.team}_${player.socketId}`, handleAvatar(player.avatar, player.team));
+            const count = player.team === 'blue' ? ++countBlue : ++countRed;
+            playerData[player.socketId] = {};
+            playerData[player.socketId]["defaultPos"] = {x: teamPos[player.team][count].x, y: teamPos[player.team][count].y}
+            playerData[player.socketId]["player"] = add([
+                sprite(`${player.team}_${player.socketId}`),
+                pos(teamPos[player.team][count].x, teamPos[player.team][count].y),
+                area(),
+                scale(SCALE_PLAYER),
+                "player",
+                {value: {name: player.name, socketId: player.socketId, team: player.team, startX: teamPos[player.team][count].x, startY: teamPos[player.team][count].y, x: 0, y: 0, direction: "top"}}
+            ])
+        })
+    
+        every("player", (s) => {
+            s.collides("player", (t) => {
+                s.move(8*(s.pos.x-t.pos.x), 8*(s.pos.y-t.pos.y));
+            })
+    
+            handlePlayerCollide(s, s.value.name, s.value.team, s.value.socketId);
+        })
+    }
+    
+    const buildStadium = () => {
+        for(let i = 0; i < 12; i++) {
+            add([
+                pos(PITCH_X * i , 0),
+                rect(PITCH_X / 2, GAME_HEIGHT),
+                color(46, 204, 113)
+            ]) 
+        }
+        //center circle
+        add([
+            pos(GAME_WIDTH / 2- 500*SCALE_CENTER_CIRCLE / 2, GAME_HEIGHT / 2 - 500*SCALE_CENTER_CIRCLE / 2),
+            // circle(100),
+            sprite('circle'),
+            scale(SCALE_CENTER_CIRCLE),
+            "linecircle"
+        ])
+        add([
+            pos(PITCH_X, GAME_HEIGHT - PITCH_Y - SCALE_CORN * 250),
+            sprite('corn'),
+            scale(SCALE_CORN),
+            "bottomleftcorn"
+        ])
+    
+        add([
+            pos(PITCH_X + SCALE_CORN * 250, PITCH_Y),
+            sprite('corn'),
+            scale(SCALE_CORN),
+            rotate(90),
+            "topleftcorn"
+        ])
+    
+        add([
+            pos(GAME_WIDTH - PITCH_X , PITCH_Y + SCALE_CORN * 250),
+            sprite('corn'),
+            scale(SCALE_CORN),
+            rotate(180),
+            "toprightcorn"
+        ])
+    
+        add([
+            pos(GAME_WIDTH - PITCH_X - SCALE_CORN * 250 , GAME_HEIGHT - PITCH_Y),
+            sprite('corn'),
+            scale(SCALE_CORN),
+            rotate(270),
+            "bottomrightcorn"
+        ])
+    
+        add([
+            pos(GAME_WIDTH / 2 - 2, PITCH_Y),
+            rect(4, STADIUM_HEIGHT),
+            "linecenter"
+        ])
+    
+        add([
+            pos(GAME_WIDTH / 2, GAME_HEIGHT / 2),
+            circle(8),
+            "centerdot"
+        ])
+    
+        add([
+            pos(PITCH_X, PITCH_Y + 1/4 * (STADIUM_HEIGHT)),
+            rect( 1/8 * (STADIUM_WIDTH), 4),
+            "penlefttop"
+        ])
+    
+        add([
+            pos(PITCH_X, PITCH_Y + 3/4 * (STADIUM_HEIGHT)),
+            rect( 1/8 * (STADIUM_WIDTH), 4),
+            "penleftbottom"
+        ])
+    
+        add([
+            pos(PITCH_X + 1/8 * (STADIUM_WIDTH), PITCH_Y + 1/4 * (STADIUM_HEIGHT)),
+            rect( 4, 1/2 * (STADIUM_HEIGHT) + 4),
+            "penleftright"
+        ])
+    
+        add([
+            sprite('pencircle'),
+            pos(PITCH_X + 1/8 * (STADIUM_WIDTH) + 4, PITCH_Y + 1/3 * STADIUM_HEIGHT ),
+            scale(1/3 * (STADIUM_HEIGHT) / 472),
+            'penleftcirle'
+        ])
+    
+        add([
+            pos(GAME_WIDTH - PITCH_X - 1/8 * (STADIUM_WIDTH), PITCH_Y + 1/4 * STADIUM_HEIGHT),
+            rect( 1/8 * (STADIUM_WIDTH), 4),
+            "penrighttop"
+        ])
+    
+        add([
+            pos(GAME_WIDTH - PITCH_X - 1/8 * (STADIUM_WIDTH), PITCH_Y + 1/4 * STADIUM_HEIGHT),
+            rect( 4, 1/2 * (STADIUM_HEIGHT) + 4),
+            "penrightleft"
+        ])
+    
+        add([
+            pos(GAME_WIDTH - PITCH_X - 1/8 * (STADIUM_WIDTH), PITCH_Y + 3/4 * STADIUM_HEIGHT),
+            rect( 1/8 * (STADIUM_WIDTH), 4),
+            "penrightbottom"
+        ])
+    
+        add([
+            sprite('pencircle'),
+            pos(GAME_WIDTH - PITCH_X - 1/8 * (STADIUM_WIDTH) + 4, PITCH_Y + 2/3 * STADIUM_HEIGHT),
+            scale(1/3 * (STADIUM_HEIGHT) / 472),
+            rotate(180),
+            'penleftcirle'
+        ])
+    
+        add([
+            pos(PITCH_X, PITCH_Y),
+            rect(4, 1/3*(STADIUM_HEIGHT)),
+            // outline(0.6),
+            area(),
+            "wallleft",
+        ])
+        
+        add([
+            pos(PITCH_X, PITCH_Y + 2/3*(STADIUM_HEIGHT) ),
+            rect(4, 1/3*(STADIUM_HEIGHT)),
+            // outline(0.6),
+            area(),
+            "wallleft"
+        ])
+        
+        add([
+            pos(PITCH_X - 1/6*(STADIUM_HEIGHT), PITCH_Y + 2/3*(STADIUM_HEIGHT) ),
+            rect(1/6*(STADIUM_HEIGHT), 4),
+            // outline(0.6),
+            area(),
+            "wallbottom"
+        ])
+        
+        add([
+            pos(PITCH_X - 1/6*(STADIUM_HEIGHT), PITCH_Y + 1/3*(STADIUM_HEIGHT) - 4 ),
+            rect(1/6*(STADIUM_HEIGHT), 4),
+            // outline(0.6),
+            area(),
+            "walltop"
+        ])
+        
+        add([
+            pos(PITCH_X - 1/6*(STADIUM_HEIGHT), PITCH_Y + 1/3*(STADIUM_HEIGHT) ),
+            rect(4, 1/3*(STADIUM_HEIGHT)),
+            // outline(0.6),
+            area(),
+            "wallleft"
+        ])
+    
+        add([
+            sprite('net'),
+            pos(PITCH_X - 1/6*(STADIUM_HEIGHT) + 4, PITCH_Y + 1/3*(STADIUM_HEIGHT) ),
+            scale(1/3*(STADIUM_HEIGHT)/168),
+            "leftnet",
+        ])
+        
+        add([
+            pos(PITCH_X, PITCH_Y),
+            rect(STADIUM_WIDTH, 4),
+            // outline(0.6),
+            area(),
+            "walltop"
+        ])
+        
+        add([
+            pos(GAME_WIDTH - 4 - PITCH_X, PITCH_Y),
+            rect(4, 1/3*(STADIUM_HEIGHT)),
+            // outline(0.6),
+            area(),
+            "wallright"
+        ])
+        
+        add([
+            pos(GAME_WIDTH - 4 - PITCH_X, PITCH_Y + 2/3*(STADIUM_HEIGHT)),
+            rect(4, 1/3*(STADIUM_HEIGHT)),
+            // outline(0.6),
+            area(),
+            "wallright"
+        ])
+        
+        add([
+            pos(GAME_WIDTH - 4 - PITCH_X, PITCH_Y + 1/3*(STADIUM_HEIGHT) - 4),
+            rect(1/6*(STADIUM_HEIGHT), 4),
+            // outline(0.6),
+            area(),
+            "walltop"
+        ])
+        
+        add([
+            pos(GAME_WIDTH - PITCH_X - 4 + 1/6*(STADIUM_HEIGHT), PITCH_Y + 1/3*(STADIUM_HEIGHT) - 4 ),
+            rect(4, 1/3*(STADIUM_HEIGHT) + 4),
+            // outline(0.6),
+            area(),
+            "wallright"
+        ])
+        
+        add([
+            pos(GAME_WIDTH - PITCH_X, PITCH_Y + 2/3*(STADIUM_HEIGHT) ),
+            rect(1/6*(STADIUM_HEIGHT), 4),
+            // outline(0.6),
+            area(),
+            "wallbottom"
+        ])
+        
+        add([
+            sprite('net'),
+            pos(GAME_WIDTH - 4 - PITCH_X, PITCH_Y + 1/3*(STADIUM_HEIGHT)),
+            scale(1/3*(STADIUM_HEIGHT)/168),
+            "rightnet"
+        ])
+    
+        add([
+            pos(PITCH_X, GAME_HEIGHT - 4 - PITCH_Y),
+            rect(STADIUM_WIDTH, 4),
+            // outline(0.6),
+            area(),
+            "wallbottom"
+        ])
+    }
+    
+    const handleShowLog = (blueScore, redScore, logGame) => {
+        $(".lastmatch-detail > p").textContent = `${blueScore} - ${redScore}`;
+        while ( $(".blue-detail").hasChildNodes()) {
+            $(".blue-detail").removeChild( $(".blue-detail").lastChild);
+        }
+        while ( $(".red-detail").hasChildNodes()) {
+            $(".red-detail").removeChild( $(".red-detail").lastChild);
+        }
+        Object.keys(logGame["blue"]).forEach(key => {
+            const div = document.createElement('div');
+            div.textContent = `${key} (${logGame["blue"][key].join(", ")})`;
+            $(".blue-detail").appendChild(div);
+        })
+    
+        Object.keys(logGame["red"]).forEach(key => {
+            const div = document.createElement('div');
+            div.textContent = `${key} (${logGame["red"][key].join(", ")})`;
+            $(".red-detail").appendChild(div);
+        })
+    
+    }
+    
+    const handleSaveLog = (logGame, player, teamGoal, isOG, time) => {
+        if(logGame[teamGoal][player]) {
+            logGame[teamGoal][player].push(`${time}${isOG ? "-OG" : ""}`);
+        } else {
+            logGame[teamGoal][player] = [`${time}${isOG ? "-OG" : ""}`];
+        }
+    }
+    
+    const resetBall = (ball) => {
+        ball.value.touchId = null;
+        ball.value.x = 0;
+        ball.value.y = 0;
+        
+        ball.moveTo(GAME_WIDTH / 2 - WIDTH_BALL/2, GAME_HEIGHT / 2 - WIDTH_BALL/2);
+        every("player", (s) => {
+            const {startX, startY} = s.value;
+            s.moveTo(startX, startY)
+        })
+    }
+    
+    const handleShowGoal = (touchPlayer, touchTeam, time, teamGoal) => {
+        // wait(2, () => {
+        add([
+            sprite("goal"),
+            pos(GAME_WIDTH / 2 - SCALE_GOAL*434/2, GAME_HEIGHT / 2 - SCALE_GOAL*149/2),
+            scale(SCALE_GOAL),
+            "goal",
+        ])
+        
+        add([
+            pos(GAME_WIDTH / 2 - SCALE_GOAL*434/2 + 40, GAME_HEIGHT / 2 + SCALE_GOAL*149/2),
+            text(`${touchPlayer}  ${touchTeam !== teamGoal ? "(OG)" : ""} ${time}`, {
+                size: GAME_HEIGHT / 30,
+            }),
+            "goalplayer"
+        ])
+            
+    }
+
 
     buildStadium();
     
@@ -619,7 +618,6 @@ const game = (listPlayer, ballSrc, startTime) => {
     onUpdate('ball' , () => {
         handleGoal();
         
-        if(!playerData["test"]) return;
         if(!ball.value.touchId) {
             handleMoveBall();
             return;
@@ -666,6 +664,7 @@ const game = (listPlayer, ballSrc, startTime) => {
                 break;
         }
     })
+
     const handleShoot = (direction) => {
         if(ball.pos.y <= PITCH_Y) {
             return;
@@ -742,12 +741,12 @@ const game = (listPlayer, ballSrc, startTime) => {
         }
     })
 
-    // onKeyDown("up", () => {
-    //     handleMove(0, -STRAIGHT_PLAYER_SPEED, "test");
-    //     if("test" === ball.value.touchId) {
-    //         ball.value.direction = "up";
-    //     }   
-    // })
+    onKeyDown("up", () => {
+        handleMove(0, -STRAIGHT_PLAYER_SPEED, "test");
+        if("test" === ball.value.touchId) {
+            ball.value.direction = "up";
+        }   
+    })
 
     // onKeyDown("down", () => {
     //     if("test" === ball.value.touchId) {
