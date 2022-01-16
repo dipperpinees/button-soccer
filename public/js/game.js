@@ -1,20 +1,21 @@
-const SCALE_SCREEN = 1;
 const GAME_WIDTH = window.screen.width * window.devicePixelRatio;
 const GAME_HEIGHT = window.screen.height * window.devicePixelRatio;
 const PITCH_X = GAME_WIDTH / 12;
 const PITCH_Y = GAME_HEIGHT / 16;
-const SCALE_BALL = GAME_HEIGHT / 22 / 256;
-const SCALE_PLAYER = GAME_HEIGHT / 22 / 100;
+const SCALE_BALL = GAME_HEIGHT / 24 / 256;
+const SCALE_PLAYER = GAME_HEIGHT / 20 / 100;
 const STADIUM_WIDTH = GAME_WIDTH - PITCH_X * 2;
 const STADIUM_HEIGHT = GAME_HEIGHT - PITCH_Y * 2;
-const STRAIGHT_SPEED = GAME_WIDTH / 7;
-const DIAGONAL_SPEED = STRAIGHT_SPEED/2 * Math.sqrt(2);
-const BALL_SPEED = GAME_WIDTH / 6.5;
+const STRAIGHT_PLAYER_SPEED = GAME_WIDTH / 7;
+const DIAGONAL_PLAYER_SPEED = STRAIGHT_PLAYER_SPEED/2 * Math.sqrt(2);
+const STRAIGHT_BALL_SPEED = GAME_WIDTH / 3.4;
+const DIAGONAL_BALL_SPEED = STRAIGHT_BALL_SPEED/2 * Math.sqrt(2);
 $ = document.querySelector.bind(document);
 $$ = document.querySelectorAll.bind(document);
 const socket = io({query: {type: 'create'}});
 const listBall = $$(".settings-ball li");
 const listTime = $$(".settings-time li");
+// const listPlayer = {"test": {socketId: "test", name: "hiep",team: "blue", avatar: "https://res.cloudinary.com/uethehe/image/upload/w_100,h_100,c_fill,r_max/v1642120588/DEV/kwv5fpkfkbj08zuwq9dp.png"}};
 const listPlayer = {};
 const WIDTH_PLAYER = 100 * SCALE_PLAYER;
 const WIDTH_BALL = 256 * SCALE_BALL;
@@ -49,55 +50,29 @@ const handleAvatar = (avatar, team) => {
 }
 
 const addPlayer = async (listPlayer, playerData) => {
-    const handlePlayerCollide = (obj, name, team) => {
-        obj.collides("wallleft1",  () => {
-            obj.move(STRAIGHT_SPEED, 0);
+    const handlePlayerCollide = (obj, name, team, socketId) => {
+        // console.log(socketId);
+        obj.collides("wallleft",  () => {
+            obj.move(STRAIGHT_PLAYER_SPEED*2.5, 0);
         })
-        obj.collides("wallleft2",  () => {
-            obj.move(STRAIGHT_SPEED, 0);
-        })
-        obj.collides("goallefttop",  () => {
-            obj.move(0, STRAIGHT_SPEED);
-        })
-        obj.collides("goalleftleft",  () => {
-            obj.move(STRAIGHT_SPEED, 0);
-        })
-        obj.collides("goalleftbottom",  () => {
-            obj.move(0, -STRAIGHT_SPEED);
-        })
-        obj.collides("goalrighttop",  () => {
-            obj.move(0, STRAIGHT_SPEED);
-        })
-        obj.collides("goalrightright",  () => {
-            obj.move(-STRAIGHT_SPEED, 0);
-        })
-        obj.collides("goalrightbottom",  () => {
-            obj.move(0, -STRAIGHT_SPEED);
-        })
-        obj.collides("wallright1",  () => {
-            obj.move(-STRAIGHT_SPEED, 0);
-        })
-        obj.collides("wallright2",  () => {
-            obj.move(-STRAIGHT_SPEED, 0);
+        obj.collides("wallright",  () => {
+            obj.move(-STRAIGHT_PLAYER_SPEED*2.5, 0);
         })
         obj.collides("walltop",  () => {
-            obj.move(0, STRAIGHT_SPEED);
+            obj.move(0, STRAIGHT_PLAYER_SPEED*2.5);
         })
-        
         obj.collides("wallbottom",  () => {
-            obj.move(0, -STRAIGHT_SPEED);
+            obj.move(0, -STRAIGHT_PLAYER_SPEED*2.5);
         })
     
         obj.collides("ball",  (s) => {
+            if(s.value.touchId === socketId) {
+                return;
+            }
             s.value.touch = name;
             s.value.touchTeam = team;
-            const vectoX = (s.pos.x + WIDTH_BALL) / 2 - (obj.pos.x + WIDTH_PLAYER) / 2;
-            const vectoY = (s.pos.y + WIDTH_BALL) / 2- (obj.pos.y + WIDTH_PLAYER) / 2;
-            obj.move(-8*vectoX, -8*vectoY);
-            const countStepMove = Math.sqrt((Math.pow(BALL_SPEED + 40, 2))/(Math.pow(vectoX, 2) +  Math.pow(vectoY, 2) ))
-            s.value.x += countStepMove * vectoX;
-            s.value.y += countStepMove * vectoY;
-            s.move(s.value.x, s.value.y)    
+            s.value.touchId = socketId;
+            s.value.direction = playerData[socketId].player.value.direction;
         })
     }
     let countBlue = -1;
@@ -115,7 +90,7 @@ const addPlayer = async (listPlayer, playerData) => {
             area(),
             scale(SCALE_PLAYER),
             "player",
-            {value: {name: player.name, team: player.team, startX: teamPos[player.team][count].x, startY: teamPos[player.team][count].y, x: 0, y: 0}}
+            {value: {name: player.name, socketId: player.socketId, team: player.team, startX: teamPos[player.team][count].x, startY: teamPos[player.team][count].y, x: 0, y: 0, direction: "top"}}
         ])
     })
 
@@ -123,72 +98,9 @@ const addPlayer = async (listPlayer, playerData) => {
         s.collides("player", (t) => {
             s.move(8*(s.pos.x-t.pos.x), 8*(s.pos.y-t.pos.y));
         })
-        handlePlayerCollide(s, s.value.name, s.value.team);
-    })
-}
 
-const addBall = () => {
-    //add ball and handle ball collide
-    const ball = add([
-        sprite("ball"),
-        pos(GAME_WIDTH / 2 - WIDTH_BALL/2, GAME_HEIGHT / 2 - WIDTH_BALL/2),
-        area(),
-        scale(SCALE_BALL),
-        {value: {x: 0, y: 0, touch: null, touchTeam: null}},
-        "ball"
-    ])
-    ball.collides("wallleft1",  () => {
-        ball.value.x = ball.value.x * -1;
-        ball.move(200, 0);
+        handlePlayerCollide(s, s.value.name, s.value.team, s.value.socketId);
     })
-    ball.collides("wallleft2",  () => {
-        ball.value.x = ball.value.x * -1;
-        ball.move(200, 0);
-    })
-    ball.collides("wallright1",  () => {
-        ball.value.x = ball.value.x * -1;
-        ball.move(-200, 0);
-    })
-    ball.collides("wallright2",  () => {
-        ball.value.x = ball.value.x * -1;
-        ball.move(-200, 0);
-    })
-    
-    ball.collides("wallbottom",  () => {
-        ball.value.y = ball.value.y * -1;
-        ball.move(0, -200);
-    })
-    
-    ball.collides("walltop",  () => {
-        ball.value.y = ball.value.y * -1;
-        ball.move(0, 200);
-    })
-
-    ball.collides("goallefttop",  () => {
-        ball.value.y = ball.value.y * -1;
-        ball.move(0, 200);
-    })
-    ball.collides("goalleftleft",  () => {
-        ball.value.x = ball.value.x * -1;
-        ball.move(200, 0);
-    })
-    ball.collides("goalleftbottom",  () => {
-        ball.value.y = ball.value.y * -1;
-        ball.move(0, -200);
-    })
-    ball.collides("goalrighttop",  () => {
-        ball.value.y = ball.value.y * -1;
-        ball.move(0, 200);
-    })
-    ball.collides("goalrightright",  () => {
-        ball.value.x = ball.value.x * -1;
-        ball.move(-200, 0);
-    })
-    ball.collides("goalrightbottom",  () => {
-        ball.value.y = ball.value.y * -1;
-        ball.move(0, -200);
-    })
-    return ball;
 }
 
 const buildStadium = () => {
@@ -240,7 +152,7 @@ const buildStadium = () => {
 
     add([
         pos(GAME_WIDTH / 2 - 2, PITCH_Y),
-        rect(4, GAME_HEIGHT - PITCH_Y * 2),
+        rect(4, STADIUM_HEIGHT),
         "linecenter"
     ])
 
@@ -251,106 +163,106 @@ const buildStadium = () => {
     ])
 
     add([
-        pos(PITCH_X, PITCH_Y + 1/4 * (GAME_HEIGHT - PITCH_Y * 2)),
-        rect( 1/8 * (GAME_WIDTH - PITCH_X * 2), 4),
+        pos(PITCH_X, PITCH_Y + 1/4 * (STADIUM_HEIGHT)),
+        rect( 1/8 * (STADIUM_WIDTH), 4),
         "penlefttop"
     ])
 
     add([
-        pos(PITCH_X, PITCH_Y + 3/4 * (GAME_HEIGHT - PITCH_Y * 2)),
-        rect( 1/8 * (GAME_WIDTH - PITCH_X * 2), 4),
+        pos(PITCH_X, PITCH_Y + 3/4 * (STADIUM_HEIGHT)),
+        rect( 1/8 * (STADIUM_WIDTH), 4),
         "penleftbottom"
     ])
 
     add([
-        pos(PITCH_X + 1/8 * (GAME_WIDTH - PITCH_X * 2), PITCH_Y + 1/4 * (GAME_HEIGHT - PITCH_Y * 2)),
-        rect( 4, 1/2 * (GAME_HEIGHT - PITCH_Y * 2) + 4),
+        pos(PITCH_X + 1/8 * (STADIUM_WIDTH), PITCH_Y + 1/4 * (STADIUM_HEIGHT)),
+        rect( 4, 1/2 * (STADIUM_HEIGHT) + 4),
         "penleftright"
     ])
 
     add([
         sprite('pencircle'),
-        pos(PITCH_X + 1/8 * (GAME_WIDTH - PITCH_X * 2) + 4, PITCH_Y + 1/3 * (GAME_HEIGHT - PITCH_Y * 2) ),
-        scale(1/3 * (GAME_HEIGHT - PITCH_Y * 2) / 472),
+        pos(PITCH_X + 1/8 * (STADIUM_WIDTH) + 4, PITCH_Y + 1/3 * STADIUM_HEIGHT ),
+        scale(1/3 * (STADIUM_HEIGHT) / 472),
         'penleftcirle'
     ])
 
     add([
-        pos(GAME_WIDTH - PITCH_X - 1/8 * (GAME_WIDTH - PITCH_X * 2), PITCH_Y + 1/4 * (GAME_HEIGHT - PITCH_Y * 2)),
-        rect( 1/8 * (GAME_WIDTH - PITCH_X * 2), 4),
+        pos(GAME_WIDTH - PITCH_X - 1/8 * (STADIUM_WIDTH), PITCH_Y + 1/4 * STADIUM_HEIGHT),
+        rect( 1/8 * (STADIUM_WIDTH), 4),
         "penrighttop"
     ])
 
     add([
-        pos(GAME_WIDTH - PITCH_X - 1/8 * (GAME_WIDTH - PITCH_X * 2), PITCH_Y + 1/4 * (GAME_HEIGHT - PITCH_Y * 2)),
-        rect( 4, 1/2 * (GAME_HEIGHT - PITCH_Y * 2) + 4),
+        pos(GAME_WIDTH - PITCH_X - 1/8 * (STADIUM_WIDTH), PITCH_Y + 1/4 * STADIUM_HEIGHT),
+        rect( 4, 1/2 * (STADIUM_HEIGHT) + 4),
         "penrightleft"
     ])
 
     add([
-        pos(GAME_WIDTH - PITCH_X - 1/8 * (GAME_WIDTH - PITCH_X * 2), PITCH_Y + 3/4 * (GAME_HEIGHT - PITCH_Y * 2)),
-        rect( 1/8 * (GAME_WIDTH - PITCH_X * 2), 4),
+        pos(GAME_WIDTH - PITCH_X - 1/8 * (STADIUM_WIDTH), PITCH_Y + 3/4 * STADIUM_HEIGHT),
+        rect( 1/8 * (STADIUM_WIDTH), 4),
         "penrightbottom"
     ])
 
     add([
         sprite('pencircle'),
-        pos(GAME_WIDTH - PITCH_X - 1/8 * (GAME_WIDTH - PITCH_X * 2) + 4, PITCH_Y + 2/3 * (GAME_HEIGHT - PITCH_Y * 2)),
-        scale(1/3 * (GAME_HEIGHT - PITCH_Y * 2) / 472),
+        pos(GAME_WIDTH - PITCH_X - 1/8 * (STADIUM_WIDTH) + 4, PITCH_Y + 2/3 * STADIUM_HEIGHT),
+        scale(1/3 * (STADIUM_HEIGHT) / 472),
         rotate(180),
         'penleftcirle'
     ])
 
     add([
         pos(PITCH_X, PITCH_Y),
-        rect(4, 1/3*(GAME_HEIGHT - PITCH_Y * 2)),
+        rect(4, 1/3*(STADIUM_HEIGHT)),
         // outline(0.6),
         area(),
-        "wallleft1"
+        "wallleft",
     ])
     
     add([
-        pos(PITCH_X, PITCH_Y + 2/3*(GAME_HEIGHT - PITCH_Y * 2) ),
-        rect(4, 1/3*(GAME_HEIGHT - PITCH_Y * 2)),
+        pos(PITCH_X, PITCH_Y + 2/3*(STADIUM_HEIGHT) ),
+        rect(4, 1/3*(STADIUM_HEIGHT)),
         // outline(0.6),
         area(),
-        "wallleft2"
+        "wallleft"
     ])
     
     add([
-        pos(PITCH_X - 1/6*(GAME_HEIGHT - PITCH_Y * 2), PITCH_Y + 2/3*(GAME_HEIGHT - PITCH_Y * 2) ),
-        rect(1/6*(GAME_HEIGHT - PITCH_Y * 2), 4),
+        pos(PITCH_X - 1/6*(STADIUM_HEIGHT), PITCH_Y + 2/3*(STADIUM_HEIGHT) ),
+        rect(1/6*(STADIUM_HEIGHT), 4),
         // outline(0.6),
         area(),
-        "goalleftbottom"
+        "wallbottom"
     ])
     
     add([
-        pos(PITCH_X - 1/6*(GAME_HEIGHT - PITCH_Y * 2), PITCH_Y + 1/3*(GAME_HEIGHT - PITCH_Y * 2) - 4 ),
-        rect(1/6*(GAME_HEIGHT - PITCH_Y * 2), 4),
+        pos(PITCH_X - 1/6*(STADIUM_HEIGHT), PITCH_Y + 1/3*(STADIUM_HEIGHT) - 4 ),
+        rect(1/6*(STADIUM_HEIGHT), 4),
         // outline(0.6),
         area(),
-        "goallefttop"
+        "walltop"
     ])
     
     add([
-        pos(PITCH_X - 1/6*(GAME_HEIGHT - PITCH_Y * 2), PITCH_Y + 1/3*(GAME_HEIGHT - PITCH_Y * 2) ),
-        rect(4, 1/3*(GAME_HEIGHT - PITCH_Y * 2)),
+        pos(PITCH_X - 1/6*(STADIUM_HEIGHT), PITCH_Y + 1/3*(STADIUM_HEIGHT) ),
+        rect(4, 1/3*(STADIUM_HEIGHT)),
         // outline(0.6),
         area(),
-        "goalleftleft"
+        "wallleft"
     ])
 
     add([
         sprite('net'),
-        pos(PITCH_X - 1/6*(GAME_HEIGHT - PITCH_Y * 2) + 4, PITCH_Y + 1/3*(GAME_HEIGHT - PITCH_Y * 2) ),
-        scale(1/3*(GAME_HEIGHT - PITCH_Y * 2)/168),
+        pos(PITCH_X - 1/6*(STADIUM_HEIGHT) + 4, PITCH_Y + 1/3*(STADIUM_HEIGHT) ),
+        scale(1/3*(STADIUM_HEIGHT)/168),
         "leftnet",
     ])
     
     add([
         pos(PITCH_X, PITCH_Y),
-        rect(GAME_WIDTH - PITCH_X * 2, 4),
+        rect(STADIUM_WIDTH, 4),
         // outline(0.6),
         area(),
         "walltop"
@@ -358,54 +270,54 @@ const buildStadium = () => {
     
     add([
         pos(GAME_WIDTH - 4 - PITCH_X, PITCH_Y),
-        rect(4, 1/3*(GAME_HEIGHT - PITCH_Y * 2)),
+        rect(4, 1/3*(STADIUM_HEIGHT)),
         // outline(0.6),
         area(),
-        "wallright1"
+        "wallright"
     ])
     
     add([
-        pos(GAME_WIDTH - 4 - PITCH_X, PITCH_Y + 2/3*(GAME_HEIGHT - PITCH_Y * 2)),
-        rect(4, 1/3*(GAME_HEIGHT - PITCH_Y * 2)),
+        pos(GAME_WIDTH - 4 - PITCH_X, PITCH_Y + 2/3*(STADIUM_HEIGHT)),
+        rect(4, 1/3*(STADIUM_HEIGHT)),
         // outline(0.6),
         area(),
-        "wallright2"
+        "wallright"
     ])
     
     add([
-        pos(GAME_WIDTH - 4 - PITCH_X, PITCH_Y + 1/3*(GAME_HEIGHT - PITCH_Y * 2) - 4),
-        rect(1/6*(GAME_HEIGHT - PITCH_Y * 2), 4),
+        pos(GAME_WIDTH - 4 - PITCH_X, PITCH_Y + 1/3*(STADIUM_HEIGHT) - 4),
+        rect(1/6*(STADIUM_HEIGHT), 4),
         // outline(0.6),
         area(),
-        "goalrighttop"
+        "walltop"
     ])
     
     add([
-        pos(GAME_WIDTH - PITCH_X - 4 + 1/6*(GAME_HEIGHT - PITCH_Y * 2), PITCH_Y + 1/3*(GAME_HEIGHT - PITCH_Y * 2) - 4 ),
-        rect(4, 1/3*(GAME_HEIGHT - PITCH_Y * 2) + 4),
+        pos(GAME_WIDTH - PITCH_X - 4 + 1/6*(STADIUM_HEIGHT), PITCH_Y + 1/3*(STADIUM_HEIGHT) - 4 ),
+        rect(4, 1/3*(STADIUM_HEIGHT) + 4),
         // outline(0.6),
         area(),
-        "goalrightright"
+        "wallright"
     ])
     
     add([
-        pos(GAME_WIDTH - PITCH_X, PITCH_Y + 2/3*(GAME_HEIGHT - PITCH_Y * 2) ),
-        rect(1/6*(GAME_HEIGHT - PITCH_Y * 2), 4),
+        pos(GAME_WIDTH - PITCH_X, PITCH_Y + 2/3*(STADIUM_HEIGHT) ),
+        rect(1/6*(STADIUM_HEIGHT), 4),
         // outline(0.6),
         area(),
-        "goalrightbottom"
+        "wallbottom"
     ])
     
     add([
         sprite('net'),
-        pos(GAME_WIDTH - 4 - PITCH_X, PITCH_Y + 1/3*(GAME_HEIGHT - PITCH_Y * 2)),
-        scale(1/3*(GAME_HEIGHT - PITCH_Y * 2)/168),
+        pos(GAME_WIDTH - 4 - PITCH_X, PITCH_Y + 1/3*(STADIUM_HEIGHT)),
+        scale(1/3*(STADIUM_HEIGHT)/168),
         "rightnet"
     ])
 
     add([
         pos(PITCH_X, GAME_HEIGHT - 4 - PITCH_Y),
-        rect(GAME_WIDTH - PITCH_X * 2, 4),
+        rect(STADIUM_WIDTH, 4),
         // outline(0.6),
         area(),
         "wallbottom"
@@ -443,9 +355,10 @@ const handleSaveLog = (logGame, player, teamGoal, isOG, time) => {
 }
 
 const resetBall = (ball) => {
+    ball.value.touchId = null;
     ball.value.x = 0;
     ball.value.y = 0;
-
+    
     ball.moveTo(GAME_WIDTH / 2 - WIDTH_BALL/2, GAME_HEIGHT / 2 - WIDTH_BALL/2);
     every("player", (s) => {
         const {startX, startY} = s.value;
@@ -536,7 +449,38 @@ const game = (listPlayer, ballSrc, startTime) => {
         color(237, 62, 62)
     ])
 
-    const ball = addBall();
+    //readd player
+    addPlayer(listPlayer, playerData);
+
+    const ball = add([
+        sprite("ball"),
+        pos(GAME_WIDTH / 2 - WIDTH_BALL/2, GAME_HEIGHT / 2 - WIDTH_BALL/2),
+        area(),
+        scale(SCALE_BALL),
+        {value: {x: 0, y: 0, touch: null, touchTeam: null, touchId: null, direction: ""}},
+        "ball"
+    ])
+
+    ball.collides("wallleft",  () => {
+        ball.value.x = ball.value.x * -1;
+        ball.move(200, 0);
+    })
+
+
+    ball.collides("wallright",  () => {
+        ball.value.x = ball.value.x * -1;
+        ball.move(-200, 0);
+    })
+
+    ball.collides("wallbottom",  () => {
+        ball.value.y = ball.value.y * -1;
+        ball.move(0, -200);
+    })
+    
+    ball.collides("walltop",  () => {
+        ball.value.y = ball.value.y * -1;
+        ball.move(0, 200);
+    })
 
     loop(1, () => {
         if(!isMove) return;
@@ -582,104 +526,253 @@ const game = (listPlayer, ballSrc, startTime) => {
         }
     })
 
+    const handleKeepBall = (direction) => {
+        const playerPosX = playerData[ball.value.touchId].player.pos.x;
+        const playerPosY = playerData[ball.value.touchId].player.pos.y;
+        const playerCenterX = playerPosX + WIDTH_PLAYER/2;
+        const playerCenterY = playerPosY + WIDTH_PLAYER/2;
+        switch(direction) {
+            case "right": 
+                ball.moveTo(playerCenterX + WIDTH_PLAYER / 2, playerCenterY - WIDTH_BALL / 2);
+                break;
+            case "left": 
+                ball.moveTo(playerCenterX - WIDTH_PLAYER / 2 - WIDTH_BALL , playerCenterY - WIDTH_BALL / 2);
+                break;
+            case "up": 
+                ball.moveTo(playerCenterX - WIDTH_BALL / 2, playerCenterY - WIDTH_PLAYER / 2 - WIDTH_BALL)
+                break;
+            case "down":
+                ball.moveTo(playerCenterX - WIDTH_BALL / 2, playerCenterY + WIDTH_PLAYER / 2);
+                break;
+            case "up left":
+                ball.moveTo(playerPosX - WIDTH_BALL / 2, playerPosY - WIDTH_BALL / 2);
+                break;
+            case "up right":
+                ball.moveTo(playerPosX + WIDTH_PLAYER - WIDTH_BALL / 2 , playerPosY - WIDTH_BALL / 2)
+                break;
+            case "down right": 
+                ball.moveTo(playerPosX + WIDTH_PLAYER - WIDTH_BALL / 2, playerPosY + WIDTH_PLAYER - WIDTH_BALL / 2 )
+                break;
+            case "down left": 
+                ball.moveTo(playerPosX - WIDTH_BALL / 2 , playerPosY + WIDTH_PLAYER - WIDTH_BALL / 2 )
+                break;
+        }
+    }
+
+    const handleGoal = () => {
+        if(isGoal) return;
+        if(ball.pos.x >= 0 && ball.pos.x + WIDTH_BALL <= PITCH_X && ball.pos.y>= PITCH_Y + 1/3*(STADIUM_HEIGHT) && ball.pos.y + WIDTH_BALL <= PITCH_Y + 2/3*(STADIUM_HEIGHT)) {
+            shake(120)
+            isGoal = 'red';
+            redScore.value++;
+            redScore.text = redScore.value;
+            isMove = false;
+            play("goal");
+            wait(2, () => {
+                handleShowGoal(ball.value.touch, ball.value.touchTeam, time.text, "red");
+                wait(3, () => {
+                    destroyAll("goal");
+                    destroyAll("goalplayer");
+                    isGoal = false;
+                    resetBall(ball);
+                    wait(2, () => {
+                        play("whistle");
+                        isMove = true;
+                    })
+                })
+            })
+            handleSaveLog(logGame, ball.value.touch, "red", ball.value.touchTeam !== "red", time.text);
+        }
+        if(ball.pos.x <= GAME_WIDTH && ball.pos.x >= (GAME_WIDTH - PITCH_X) && ball.pos.y>= PITCH_Y + 1/3*(STADIUM_HEIGHT) && ball.pos.y + WIDTH_BALL <= PITCH_Y + 2/3*(STADIUM_HEIGHT)) {
+            shake(120);
+            isGoal = 'blue';
+            blueScore.value++;
+            blueScore.text = blueScore.value;
+            play("goal");
+            isMove = false;
+            wait(2, () => {
+                handleShowGoal(ball.value.touch, ball.value.touchTeam, time.text, "blue");
+                wait(3, () => {
+                    destroyAll("goal");
+                    destroyAll("goalplayer");
+                    isGoal = false;
+                    resetBall(ball);
+                    wait(2, () => {
+                        play("whistle");
+                        isMove = true;
+                    })
+                })
+            })
+            handleSaveLog(logGame, ball.value.touch, "blue", ball.value.touchTeam !== "blue", time.text);
+        }
+    }   
+
+    const handleMoveBall = () => {
+        if(Math.abs(ball.value.x) < 1 && Math.abs(ball.value.y) < 1) return;
+
+        ball.value.x  = ball.value.x / 1.012;
+        ball.value.y  = ball.value.y / 1.012;
+
+        ball.move(ball.value.x, ball.value.y);
+    }
+
     onUpdate('ball' , () => {
-        const handleMoveBall = () => {
-            if(Math.abs(ball.value.x) < 1 && Math.abs(ball.value.y) < 1) return;
-    
-            ball.value.x  = ball.value.x / 1.015;
-            ball.value.y  = ball.value.y / 1.015;
-    
-            ball.move(ball.value.x, ball.value.y);
-        }
-        const handleGoal = () => {
-            if(isGoal) return;
-            if(ball.pos.x + ball.width * ball.scale.x <= PITCH_X) {
-                shake(120)
-                isGoal = 'red';
-                redScore.value++;
-                redScore.text = redScore.value;
-                isMove = false;
-                play("goal");
-                wait(2, () => {
-                    handleShowGoal(ball.value.touch, ball.value.touchTeam, time.text, "red");
-                    wait(3, () => {
-                        destroyAll("goal");
-                        destroyAll("goalplayer");
-                        isGoal = false;
-                        resetBall(ball);
-                        wait(2, () => {
-                            play("whistle");
-                            isMove = true;
-                        })
-                    })
-                })
-                handleSaveLog(logGame, ball.value.touch, "red", ball.value.touchTeam !== "red", time.text);
-            }
-            if(ball.pos.x >= (GAME_WIDTH - PITCH_X)) {
-                shake(120);
-                isGoal = 'blue';
-                blueScore.value++;
-                blueScore.text = blueScore.value;
-                play("goal");
-                isMove = false;
-                wait(2, () => {
-                    handleShowGoal(ball.value.touch, ball.value.touchTeam, time.text, "blue");
-                    wait(3, () => {
-                        destroyAll("goal");
-                        destroyAll("goalplayer");
-                        isGoal = false;
-                        resetBall(ball);
-                        wait(2, () => {
-                            play("whistle");
-                            isMove = true;
-                        })
-                    })
-                })
-                handleSaveLog(logGame, ball.value.touch, "blue", ball.value.touchTeam !== "blue", time.text);
-            }
-        }
-        handleMoveBall();
         handleGoal();
+        
+        if(!playerData["test"]) return;
+        if(!ball.value.touchId) {
+            handleMoveBall();
+            return;
+        };
+        handleKeepBall(ball.value.direction);
+
     })
 
-    const handleMove = (moveX, moveY, socketId) => {
+    const handleMove = (moveX, moveY, socketId, direction) => {
         playerData[socketId].player.value.x = moveX;
         playerData[socketId].player.value.y = moveY;
+        playerData[socketId].player.value.direction = direction;
     }
 
     socket.on("move", ({socketId, move}) => {
         if(!isMove) return;
+        if(socketId === ball.value.touchId) {
+            ball.value.direction = move;
+        }
         switch(move) {
             case "up": 
-                handleMove(0, -STRAIGHT_SPEED, socketId);
+                handleMove(0, -STRAIGHT_PLAYER_SPEED, socketId, move);
                 break;
             case "down":
-                handleMove(0, STRAIGHT_SPEED, socketId);
+                handleMove(0, STRAIGHT_PLAYER_SPEED, socketId, move);
                 break;
             case "left":
-                handleMove(-STRAIGHT_SPEED, 0, socketId);
+                handleMove(-STRAIGHT_PLAYER_SPEED, 0, socketId, move);
                 break;
             case "right":
-                handleMove(STRAIGHT_SPEED, 0, socketId);
+                handleMove(STRAIGHT_PLAYER_SPEED, 0, socketId, move);
                 break;
             case "up right":
-                handleMove(DIAGONAL_SPEED, -DIAGONAL_SPEED, socketId);
+                handleMove(DIAGONAL_PLAYER_SPEED, -DIAGONAL_PLAYER_SPEED, socketId, move);
                 break;
             case "up left":
-                handleMove(-DIAGONAL_SPEED, -DIAGONAL_SPEED, socketId);
+                handleMove(-DIAGONAL_PLAYER_SPEED, -DIAGONAL_PLAYER_SPEED, socketId, move);
                 break;
             case "down left":
-                handleMove(-DIAGONAL_SPEED, DIAGONAL_SPEED, socketId);
+                handleMove(-DIAGONAL_PLAYER_SPEED, DIAGONAL_PLAYER_SPEED, socketId, move);
                 break;
             case "down right":
-                handleMove(DIAGONAL_SPEED, DIAGONAL_SPEED, socketId);
+                handleMove(DIAGONAL_PLAYER_SPEED, DIAGONAL_PLAYER_SPEED, socketId), move;
                 break;
         }
     })
- 
+    const handleShoot = (direction) => {
+        if(ball.pos.y <= PITCH_Y) {
+            return;
+        }
+        if(ball.pos.y + WIDTH_BALL >= GAME_HEIGHT - PITCH_Y) {
+            return;
+        }
+        if(ball.pos.x <= PITCH_X) {
+            if(ball.pos.y <= PITCH_Y + STADIUM_HEIGHT * 1/3 ) {
+                return;
+            }
 
-    //readd player
-    addPlayer(listPlayer, playerData);
+            if(ball.pos.y + WIDTH_BALL >= PITCH_Y + STADIUM_HEIGHT * 2/3) {
+                return;
+            }
+        }
+        if(ball.pos.x + WIDTH_BALL >= GAME_WIDTH - PITCH_X) {
+            if(ball.pos.y <= PITCH_Y + STADIUM_HEIGHT * 1/3 ) {
+                return;
+            }
+
+            if(ball.pos.y + WIDTH_BALL >= PITCH_Y + STADIUM_HEIGHT * 2/3) {
+                return;
+            }
+        }
+        ball.value.touchId = null;
+        switch(direction) {
+            case "right": {
+               ball.value.x = STRAIGHT_BALL_SPEED;
+               ball.value.y = 0; 
+               break;
+            }
+            case "left": {
+                ball.value.x = -STRAIGHT_BALL_SPEED;
+                ball.value.y = 0; 
+                break;
+            }
+            case "up": {
+                ball.value.x = 0;
+                ball.value.y = -STRAIGHT_BALL_SPEED; 
+                break;
+            }
+            case "down": {
+                ball.value.x = 0;
+                ball.value.y = STRAIGHT_BALL_SPEED; 
+                break;
+            }
+            case "up left": {
+                ball.value.x = -DIAGONAL_BALL_SPEED;
+                ball.value.y = -DIAGONAL_BALL_SPEED;
+                break;
+            }
+            case "up right": {
+                ball.value.x = DIAGONAL_BALL_SPEED;
+                ball.value.y = -DIAGONAL_BALL_SPEED;
+                break;
+            }
+            case "down left": {
+                ball.value.x = -DIAGONAL_BALL_SPEED;
+                ball.value.y = DIAGONAL_BALL_SPEED;
+                break;
+            }
+            case "down right": {
+                ball.value.x = DIAGONAL_BALL_SPEED;
+                ball.value.y = DIAGONAL_BALL_SPEED;
+                break;
+            }
+        }
+    }
+
+    socket.on("shoot", ({socketId}) => {
+        if(ball.value.touchId === socketId) {
+            handleShoot(ball.value.direction);
+        }
+    })
+
+    // onKeyDown("up", () => {
+    //     handleMove(0, -STRAIGHT_PLAYER_SPEED, "test");
+    //     if("test" === ball.value.touchId) {
+    //         ball.value.direction = "up";
+    //     }   
+    // })
+
+    // onKeyDown("down", () => {
+    //     if("test" === ball.value.touchId) {
+    //         ball.value.direction = "down";
+    //     }
+    //     handleMove(0, STRAIGHT_PLAYER_SPEED, "test");
+    // })
+
+    // onKeyDown("right", () => {
+    //     if("test" === ball.value.touchId) {
+    //         ball.value.direction = "right";
+    //     }
+    //     handleMove(STRAIGHT_PLAYER_SPEED, 0, "test");
+    // })
+
+    // onKeyDown("left", () => {
+    //     if("test" === ball.value.touchId) {
+    //         ball.value.direction = "left";
+    //     }
+    //     handleMove(-STRAIGHT_PLAYER_SPEED, 0, "test");
+    // })
+
+    // onKeyDown("space", () => {
+    //     handleShoot(ball.value.direction);
+    // })
 
     onUpdate("player", (s) => {
         if(Math.abs(s.value.x) < 1 && Math.abs(s.value.y) < 1) return;

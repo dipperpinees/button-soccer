@@ -12,7 +12,7 @@
     width: 20%;
     height: 100%;
     background-color: white;
-    margin: 32px;
+    /* margin: 32px; */
     border-radius: 4px;
     display: flex;
     flex-direction: column;
@@ -33,8 +33,9 @@
 }
 
 .settings {
+    margin: 24px;
     background-color: white;
-    width: 40%;
+    width: 48%;
     height: 100%;
     border-radius: 4px;
     padding: 8px;
@@ -46,6 +47,7 @@
 
 .settings-roomid {
     margin-left: 4px;
+    font-size: 16px;
 }
 
 .settings-start {
@@ -90,7 +92,8 @@
 .settings-time {
     display: flex;
     flex-wrap: wrap;
-    margin: 24px 0px;
+    margin-top: 8px;
+    margin-bottom: 12px;
 }
 
 .settings-time li {
@@ -200,13 +203,13 @@
 
 .lastmatch-detail {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     overflow: auto;
 }
 
 .lastmatch-detail p {
-    margin: 4px 16px;
+    margin: 0px 16px;
     font-size: 28px;
 }
 
@@ -256,4 +259,82 @@
 
 .game-settings label {
     font-weight: 800;
+}
+
+/* Mobile */
+@media (max-width: 900px) {
+    .wait {
+        padding: 20px;
+    }
+
+    .blueteam .redteam {
+        width: 21%;
+    }
+
+    .blueteam h4, .redteam h4 {
+        font-size: 12px;
+        padding: 4px;
+    }
+
+    .settings {
+        width: 50%;
+        margin: 12px;
+    }
+
+    .settings-roomid {
+        font-size: 12px;
+    }
+
+    .settings-time {
+        margin: 8px 0px;
+    }
+
+    .settings-time li {
+        font-size: 12px; 
+        height: 24px;
+    }
+
+    .settings-ball li {
+        width: 32px;
+        height: 36px;
+    }
+
+    .settings-ball img {
+        width: 24px;
+        height: 24px;
+    }
+
+    .settings-start {
+        font-size: 12px;
+    }
+
+    .lastmatch-detail > div > h4 {
+        font-size: 20px;
+    }
+
+    .lastmatch-detail p {
+        margin: 0px 8px;
+        font-size: 24px;
+    }
+
+    .lastmatch-detail-score div {
+        font-size: 6px;
+    }
+
+    .game-settings {
+        font-size: 24px;
+        right: 8px;
+    }
+
+    .listplayer li {
+        padding: 8px;
+    }
+
+    .listplayer li p {
+        font-size: 12px;
+    }
+
+    .listplayer li img {
+        width: 24px;
+    }
 }

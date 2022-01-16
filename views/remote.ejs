@@ -3,21 +3,23 @@
 <%- include('./header.ejs', {title: `Gamepad | ${name}`, description: "Funny soccer game play with your friends"}) %>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <link rel="stylesheet" href="/styles/remote.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
 </head>
 <body>
     <div class="gamepad">
-        <button id='up' class="bi-caret-up-fill"> </button>
-        <button id='down' class="bi-caret-down-fill"> </button>
-        <button id='right' class="bi-caret-right-fill"> </button>
-        <button id='left' class="bi-caret-left-fill"> </button>
+        <button id='up' >▲</button>
+        <button id='down'>▼</button>
+        <button id='right' >▶</button>
+        <button id='left' >◀</button>
+        <button id='shoot'>⚽</button>
     </div>
-    <i class="bi bi-fullscreen fullscreen"></i>
+    <span class="fullscreen">&#x26F6</span>
     <div class="waiting">
         <div class="waiting-choose">
             <img src=<%=avatar %> alt="avatar"> 
         </div>
-        <i class="bi bi-link-45deg sharelink"></i>
+        <span class="sharelink">
+            <img src="https://img.icons8.com/material-outlined/24/000000/share.png"/>
+        </span>
         <button class="waiting-changeteam">Change Team</button>
         <button class="waiting-ready">Ready</button>
     </div>

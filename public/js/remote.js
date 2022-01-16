@@ -2,6 +2,7 @@ const up = document.querySelector('#up')
 const down = document.querySelector('#down')
 const right = document.querySelector('#right')
 const left = document.querySelector('#left')
+const shoot = document.querySelector('#shoot')
 let moveUp;
 let moveRight;
 let moveDown;
@@ -14,7 +15,6 @@ const params = (new URL(document.location)).searchParams;
 const username = params.get('name'); 
 const password = params.get('password');
 const roomId = params.get('roomId');
-const players = ["bruyne", "congphuong", "haaland", "hoangduc", "kante", "lukaku", "mbappe", "messi", "neymar", "quanghai", "ronaldo", "tuananh"];
 let currentTeam, currentPlayer;
 $ = document.querySelector.bind(document);
 $$ = document.querySelectorAll.bind(document);
@@ -29,7 +29,7 @@ $(".fullscreen").onclick = () => {
 }
 
 $(".sharelink").onclick = () => {
-    navigator.clipboard.writeText(`http://localhost:8001/join?roomId=${roomId}&password=${password}`);
+    navigator.clipboard.writeText(`https://bs.hiepnguyen.site/join?roomId=${roomId}`);
 }
 const socket = io({
     query: {type: "join", name: username, password: password, roomId: roomId, avatar: Cookies.get('avatar')}
@@ -61,58 +61,25 @@ socket.on('join', (args) => {
     } else {
         $('body').style.backgroundColor = "#F39898";
     }
-    // players.forEach((player) => {
-    //     const newImg = document.createElement("IMG");
-    //     newImg.src = `/img/${args.team}${player}.png`;
-    //     newImg.onclick = () => {
-    //         socket.emit("player", player);
-    //         currentPlayer = player;
-    //         $(".waiting-choose > img").src = `/img/${args.team}${player}.png`;
-    //         $(".waiting-choose-toggle").style.display = 'none';
-    //     }
-    //     $(".waiting-choose-toggle").appendChild(newImg);
-    // })
 })
+
 $(".waiting-changeteam").onclick = () => {
     socket.emit("changeteam", null);
     if(currentTeam === 'blue') {
         $('body').style.backgroundColor = "#F39898";
-        // $(".waiting-choose > img").src = `/img/red${currentPlayer || "default"}.png`;
         currentTeam = 'red';
     } else {
         $('body').style.backgroundColor = "#91CAE3";
-        // $(".waiting-choose > img").src = `/img/blue${currentPlayer || "default"}.png`;
         currentTeam = 'blue';
     }
-    // const toggle = $(".waiting-choose-toggle");
-    // while ( toggle.hasChildNodes()) {
-    //     toggle.removeChild( toggle.lastChild);
-    // }
-    // players.forEach((player) => {
-    //     const newImg = document.createElement("IMG");
-    //     newImg.src = `/img/${currentTeam}${player}.png`;
-    //     newImg.onclick = () => {
-    //         socket.emit("player", player);
-    //         currentPlayer = player;
-    //         $(".waiting-choose > img").src = `/img/${currentTeam}${player}.png`;
-    //         $(".waiting-choose-toggle").style.display = 'none';
-    //     }
-    //     $(".waiting-choose-toggle").appendChild(newImg);
-    // })
 }
 
-// const makeSendMove = () => {
-//     console.log("tao interval")
-// }
-
-// {moveX: MOVE_SPEED/2 * Math.sqrt(2), moveY: - (MOVE_SPEED/2 * Math.sqrt(2)) }
-
 const handleTouch = (touchList) => {
-    if(!touchList || touchList.length === 0) return;
+    if(!touchList || touchList.length === 0 || touchList.length > 3) return;
     const touchTemp = {};
-    touchTemp[handleTouchPos(touchList[0].target)] = true;
-    if(touchList.length === 2) {
-        touchTemp[handleTouchPos(touchList[1].target)] = true;
+    
+    for(let i = 0; i<touchList.length; i++) {
+        touchTemp[handleTouchPos(touchList[i].target)] = true;
     }
 
     if(touchTemp["up"] ) {
@@ -157,11 +124,15 @@ const handleTouchPos = (touch) => {
     return null;
 }
 
+shoot.addEventListener("touchmove", (e) => {
+    socket.emit("shoot");
+})
+
+shoot.addEventListener("touchstart", (e) => {
+    socket.emit("shoot");
+})
+
 document.addEventListener("touchmove", (e) => {
-    // const move = handleTouch(e.touches);
-    // if(move) {
-    //     socket.emit("move", move)
-    // }
     listTouch = e.touches;  
 })
 
@@ -181,16 +152,9 @@ document.addEventListener("touchstart", (e) => {
             socket.emit("move", move)
         }
     }, 60)
-    // socket.emit('test', "touch start" + e.touches.length);
 })
 
 document.addEventListener("touchend", (e) => {  
     listTouch = e.touches;
-    // if(e.touches.length === 0 && isInterval) {
-    //     clearInterval(sendMove);
-    //     sendMove = null;
-    //     console.log("het interval");
-    //     isInterval = false;
-    // } 
 })
 

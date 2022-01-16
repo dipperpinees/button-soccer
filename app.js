@@ -122,6 +122,10 @@ io.on('connection', async (socket) => {
         io.to(roomList[listPlayer[socket.id].roomId].masterId).emit("move", {socketId: socket.id, move: args});
     })
 
+    socket.on('shoot', () => {
+        io.to(roomList[listPlayer[socket.id].roomId].masterId).emit('shoot', {socketId: socket.id})
+    })
+
     socket.on('changeteam', (args) => {
         const roomId = listPlayer[socket.id].roomId;
         if(listPlayer[socket.id].obj.team === 'blue') {
