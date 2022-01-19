@@ -123,7 +123,7 @@ const game = (listPlayer, ballSrc, startTime) => {
     
         every("player", (s) => {
             s.collides("player", (t) => {
-                s.move(8*(s.pos.x-t.pos.x), 8*(s.pos.y-t.pos.y));
+                s.move(6*(s.pos.x-t.pos.x), 6*(s.pos.y-t.pos.y));
             })
     
             handlePlayerCollide(s, s.value.name, s.value.team, s.value.socketId);

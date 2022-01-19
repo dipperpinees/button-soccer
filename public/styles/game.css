@@ -220,6 +220,9 @@
 .lastmatch-detail > div > h4 {
     font-size: 24px;
     margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .lastmatch-detail-score div {
@@ -314,12 +317,12 @@
     }
 
     .lastmatch-detail > div > h4 {
-        font-size: 20px;
+        font-size: 18px;
     }
 
     .lastmatch-detail p {
         margin: 0px 8px;
-        font-size: 24px;
+        font-size: 20px;
     }
 
     .lastmatch-detail-score div {
