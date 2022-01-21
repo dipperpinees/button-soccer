@@ -1,6 +1,6 @@
 $ = document.querySelector.bind(document);
 $$ = document.querySelectorAll.bind(document);
-const socket = io({query: {type: 'create'}});
+const socket = io({path: "/bssocket", query: {type: 'create'}});
 const listBall = $$(".settings-ball li");
 const listTime = $$(".settings-time li");
 const listPlayer = {};

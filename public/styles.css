@@ -1,0 +1,134 @@
+
+* {
+    font-family: 'Nunito', sans-serif;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    font-style: normal;
+}
+
+.main section {
+    background-color: #311B59;
+}
+
+.firstpage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.firstpage-slogan {
+    margin-bottom: 36px;
+}
+
+.firstpage-slogan h1 {
+    color: white;
+    text-align: center;
+    font-size: 28px;
+}
+
+.firstpage-list {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+.play-game {
+    width: 250px;
+    height: 280px;
+    border-radius: 20px;
+    background-color: #464374;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px;
+    margin: 24px;
+}
+
+.play-game:hover {
+    transform: scale(1.1);
+    cursor: pointer;
+}
+
+.play-game div {
+    position: absolute;
+    right: 16px;
+    left: 16px;
+    bottom: 8px;
+    text-align: center;
+    padding: 8px;
+    font-weight: 800;
+    color: white;
+}
+
+.play-game img {
+    width: 86%;
+}
+
+.onepage-pagination li a.active:before {
+    border: 1px solid #fff;
+    margin-left: -2px;
+}
+
+.onepage-pagination li a:before {
+    background-color: white;
+}
+
+.secondpage {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.secondpage > img {
+    height: 80%;
+}
+
+.thirdpage {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.thirdpage > img {
+    width: 50%;
+}
+
+@media (max-width: 736px) {
+    .firstpage-slogan h1 {
+        font-size: 18px;
+    }
+
+    .secondpage {
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .secondpage > img {
+        width: 80%;
+        height: auto;
+    }
+
+    .thirdpage {
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .thirdpage > img {
+        width: 80%;
+    }
+
+    .play-game {
+        width: 160px;
+        height: 180px;
+        margin: 12px;
+    }
+
+    .play-game div {
+        font-size: 12px;
+    }
+} 

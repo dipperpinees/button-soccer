@@ -32,6 +32,7 @@ $(".sharelink").onclick = () => {
     navigator.clipboard.writeText(`https://bs.hiepnguyen.site/join?roomId=${roomId}`);
 }
 const socket = io({
+    path: "/bssocket",
     query: {type: "join", name: username, password: password, roomId: roomId, avatar: Cookies.get('avatar')}
 });
 

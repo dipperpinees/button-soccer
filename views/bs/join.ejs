@@ -91,7 +91,7 @@
         const roomId = form.elements["roomid"].value;
         const name = form.elements["name"].value;
         let isValidRoom = true;
-        await fetch(`/room?roomId=${roomId}&name=${name}`, {
+        await fetch(`/bs/room?roomId=${roomId}&name=${name}`, {
             method: "POST",
         }).then(res => {
             return res.json();

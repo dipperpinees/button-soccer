@@ -7,7 +7,15 @@ const multer = require("multer");
 const cookieParser = require('cookie-parser');
 
 const server = require("http").Server(app);
-const io = require("socket.io")(server, {
+const soccerIo = require("socket.io")(server, {
+    path: "/bssocket",
+    cors: {
+      origin: '*',
+    }
+});
+
+const towerIo = require("socket.io")(server, {
+    path: "/towersocket",
     cors: {
       origin: '*',
     }
@@ -27,25 +35,29 @@ app.use(cookieParser());
 const upload = multer({ storage: storage });
 
 app.get("/", (req, res) => {
-    res.render("home")
+    res.render("index")
 })
 
-app.get("/play", (req, res) => {
-    res.render("game");
+app.get("/bs", (req, res) => {
+    res.render("bs/home")
 })
 
-app.get("/join", (req, res) => {
+app.get("/bs/play", (req, res) => {
+    res.render("bs/game");
+})
+
+app.get("/bs/join", (req, res) => {
     const {roomId} = req.query;
 
-    res.render("join", {avatar: req.cookies.avatar, roomId: roomId});
+    res.render("bs/join", {avatar: req.cookies.avatar, roomId: roomId});
 })
 
-app.get("/remote", (req, res) => {
+app.get("/bs/remote", (req, res) => {
     const {name} = req.query;
-    res.render("remote", {avatar: req.cookies.avatar, name: name});
+    res.render("bs/remote", {avatar: req.cookies.avatar, name: name});
 })
 
-app.post("/room", (req, res) => {
+app.post("/bs/room", (req, res) => {
     const {roomId, password} = req.query;
     const {type, message} = auth(roomId, password);
     if(type === "error") {
@@ -84,7 +96,7 @@ const randomId = () => {
     }
 }
 
-io.on('connection', async (socket) => {
+soccerIo.on('connection', async (socket) => {
     const {type, roomId, name, password, avatar} = socket.handshake.query;
     if(type === 'join') {
         const {type, messsage} = auth(roomId, password);
@@ -96,14 +108,14 @@ io.on('connection', async (socket) => {
             if(roomList[roomId].countBlue <= roomList[roomId].countRed) {
                 socket.emit('join', {type: 'success', team: 'blue'});
                 const currentPlayer = {socketId: socket.id, name: name, avatar: avatar, team:'blue'};
-                io.to(roomList[roomId].masterId).emit("join", currentPlayer);
+                soccerIo.to(roomList[roomId].masterId).emit("join", currentPlayer);
                 roomList[roomId].listPlayer.push(currentPlayer);
                 listPlayer[socket.id]["obj"] = currentPlayer;
                 ++roomList[roomId].countBlue;
             } else {
                 socket.emit('join', {type: 'success', team: 'red'});
                 const currentPlayer = {socketId: socket.id, name: name, avatar: avatar, team:'red'};
-                io.to(roomList[roomId].masterId).emit("join", currentPlayer); 
+                soccerIo.to(roomList[roomId].masterId).emit("join", currentPlayer); 
                 roomList[roomId].listPlayer.push(currentPlayer);
                 listPlayer[socket.id]["obj"] = currentPlayer;
                 ++roomList[roomId].countRed;
@@ -119,11 +131,11 @@ io.on('connection', async (socket) => {
     }
 
     socket.on('move', (args) => {   
-        io.to(roomList[listPlayer[socket.id].roomId].masterId).emit("move", {socketId: socket.id, move: args});
+        soccerIo.to(roomList[listPlayer[socket.id].roomId].masterId).emit("move", {socketId: socket.id, move: args});
     })
 
     socket.on('shoot', () => {
-        io.to(roomList[listPlayer[socket.id].roomId].masterId).emit('shoot', {socketId: socket.id})
+        soccerIo.to(roomList[listPlayer[socket.id].roomId].masterId).emit('shoot', {socketId: socket.id})
     })
 
     socket.on('changeteam', (args) => {
@@ -137,16 +149,16 @@ io.on('connection', async (socket) => {
             --roomList[roomId].countRed;
             listPlayer[socket.id].obj.team = 'blue';
         }
-        io.to(roomList[roomId].masterId).emit("changeteam", listPlayer[socket.id].obj);
+        soccerIo.to(roomList[roomId].masterId).emit("changeteam", listPlayer[socket.id].obj);
     })
 
     socket.on('startgame', () => {
-        io.to(listMaster[socket.id]).emit('startgame');
+        soccerIo.to(listMaster[socket.id]).emit('startgame');
         roomList[listMaster[socket.id]].isPlayed = true;
     })
 
     socket.on('endgame', () => {
-        io.to(listMaster[socket.id]).emit('endgame');
+        soccerIo.to(listMaster[socket.id]).emit('endgame');
         roomList[listMaster[socket.id]].isPlayed = false;
     })
 
@@ -156,14 +168,14 @@ io.on('connection', async (socket) => {
 
     socket.on('disconnect', () => {
         if(listMaster[socket.id]) {
-            io.to(listMaster[socket.id]).emit('status', {type: 'error', message: 'The owner has left the room'});
+            soccerIo.to(listMaster[socket.id]).emit('status', {type: 'error', message: 'The owner has left the room'});
             delete roomList[listMaster[socket.id]];
             delete listMaster[socket.id];
         } 
 
         if(listPlayer[socket.id]) {
             if(!roomList[listPlayer[socket.id].roomId]) return;
-            io.to(roomList[listPlayer[socket.id].roomId].masterId).emit('status', {type: 'leave', socketId: socket.id});
+            soccerIo.to(roomList[listPlayer[socket.id].roomId].masterId).emit('status', {type: 'leave', socketId: socket.id});
             roomList[listPlayer[socket.id].roomId].listPlayer = roomList[listPlayer[socket.id].roomId].listPlayer.filter((player) => player.socketId !== socket.id);
             if(listPlayer[socket.id].obj.team === 'blue') {
                 --roomList[listPlayer[socket.id].roomId].countBlue;
@@ -174,6 +186,7 @@ io.on('connection', async (socket) => {
         }
     })
 })
+
 
 const auth = (roomId, password) => {
     if(roomList[roomId]) {
