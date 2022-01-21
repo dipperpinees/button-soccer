@@ -10,8 +10,8 @@ const game = (listPlayer, ballSrc, startTime) => {
     const GAME_HEIGHT = window.screen.height * window.devicePixelRatio;
     const PITCH_X = GAME_WIDTH / 12;
     const PITCH_Y = GAME_HEIGHT / 16;
-    const SCALE_BALL = GAME_HEIGHT / 24 / 256;
-    const SCALE_PLAYER = GAME_HEIGHT / 20 / 100;
+    const SCALE_BALL = GAME_HEIGHT / 27 / 256;
+    const SCALE_PLAYER = GAME_HEIGHT / 23 / 100;
     const STADIUM_WIDTH = GAME_WIDTH - PITCH_X * 2;
     const STADIUM_HEIGHT = GAME_HEIGHT - PITCH_Y * 2;
     const STRAIGHT_PLAYER_SPEED = GAME_WIDTH / 7;
@@ -411,7 +411,6 @@ const game = (listPlayer, ballSrc, startTime) => {
         ])
             
     }
-
 
     buildStadium();
     

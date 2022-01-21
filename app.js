@@ -57,8 +57,8 @@ app.post("/room", (req, res) => {
 
 app.post("/avatar", upload.single('avatar'),  (req, res) => {
     const avatar = handleAvatar(req?.file?.path);
-    res.cookie("avatar", avatar);
-    res.json({ok: true});
+    // res.cookie("avatar", avatar);
+    res.json({avatar: avatar});
 })
 
 //404 not found

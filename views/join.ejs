@@ -34,10 +34,6 @@
         document.getElementById('roomid').value = roomId;
     }
 
-    if(password) {
-        document.getElementById('password').value = password;
-    }
-
     if(Cookies.get("avatar")) {
         $(".upload").src = Cookies.get("avatar");
     }
@@ -81,7 +77,7 @@
         if(form.elements["name"].value.length > 10) {
             return "Maximum length of name is 10";
         }
-        
+
         return "OK"
     }
 
@@ -94,7 +90,6 @@
         $(".loading").style.display = 'flex';
         const roomId = form.elements["roomid"].value;
         const name = form.elements["name"].value;
-        // const password = form.elements["password"].value;
         let isValidRoom = true;
         await fetch(`/room?roomId=${roomId}&name=${name}`, {
             method: "POST",
@@ -112,7 +107,8 @@
             isValidRoom = false;
         })
 
-        if(!isValidRoom) return;
+        if(!isValidRoom) 
+            return;
 
         if(form.elements["avatar"].files[0] && isValidFileType(form.elements["avatar"].files[0].name.toLowerCase())) {
             const formData = new FormData();
@@ -120,11 +116,14 @@
             await fetch("/avatar", {
                 method: 'POST',
                 body: formData
+            }).then(response => {
+                return response.json();
+            }).then(data => {
+                Cookies.set("avatar", data.avatar, { expires: 999999 })
             })
         } 
-
         if(Cookies.get("avatar")) {
-            window.location.href = `/remote?roomId=${roomId}&name=${name}&password=${password}`;
+            window.location.href = `/remote?roomId=${roomId}&name=${name}&password=${password}`; 
         } else {
             showModal("Image file required");
         }
