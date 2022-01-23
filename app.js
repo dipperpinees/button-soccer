@@ -5,8 +5,10 @@ const {cloudinaryConfig, storage} = require("./cloudinary");
 const cloudinary =  require("cloudinary").v2;
 const multer = require("multer");
 const cookieParser = require('cookie-parser');
-
+const {handleSoccerSocket, authSoccerRoom} = require("./websocket/soccerSocket");
+const handleTowerSocket = require("./websocket/towerSocket");
 const server = require("http").Server(app);
+
 const soccerIo = require("socket.io")(server, {
     path: "/bssocket",
     cors: {
@@ -59,7 +61,7 @@ app.get("/bs/remote", (req, res) => {
 
 app.post("/bs/room", (req, res) => {
     const {roomId, password} = req.query;
-    const {type, message} = auth(roomId, password);
+    const {type, message} = authSoccerRoom(roomId, password);
     if(type === "error") {
         res.status(400).json({type, message});
     } else {
@@ -73,139 +75,29 @@ app.post("/avatar", upload.single('avatar'),  (req, res) => {
     res.json({avatar: avatar});
 })
 
+app.get("/tower", (req, res) => {
+    res.render("tower/home")
+})
+
+app.get("/tower/game", (req, res) => {
+    res.render("tower/game");
+})
+
+app.get("/tower/join", (req, res) => {
+    res.render("tower/join");
+})
+
+app.get("/tower/remote", (req, res) => {
+    res.render("tower/remote");
+})
+
 //404 not found
 app.get('*', function(req, res){
     res.status(404).render('404');
 });
 
-const roomList = {};
-const listPlayer = {};
-const listMaster = {};
-
-const randomId = () => {
-    const listChar = "abcdefghijklmnopqrstuvwxyz0123456789";
-    while (true) {
-        let roomId = "";
-        const lengthList = listChar.length;
-        for(let i = 0; i<6; i++) {
-            roomId += listChar[Math.floor(Math.random() * lengthList)];
-        }
-        if(!roomList[roomId]) {
-            return roomId;
-        }
-    }
-}
-
-soccerIo.on('connection', async (socket) => {
-    const {type, roomId, name, password, avatar} = socket.handshake.query;
-    if(type === 'join') {
-        const {type, messsage} = auth(roomId, password);
-        if(type === 'error') {
-            socket.emit('join', {type, messsage});
-        } else {
-            socket.join(roomId);
-            listPlayer[socket.id] = {roomId: roomId};
-            if(roomList[roomId].countBlue <= roomList[roomId].countRed) {
-                socket.emit('join', {type: 'success', team: 'blue'});
-                const currentPlayer = {socketId: socket.id, name: name, avatar: avatar, team:'blue'};
-                soccerIo.to(roomList[roomId].masterId).emit("join", currentPlayer);
-                roomList[roomId].listPlayer.push(currentPlayer);
-                listPlayer[socket.id]["obj"] = currentPlayer;
-                ++roomList[roomId].countBlue;
-            } else {
-                socket.emit('join', {type: 'success', team: 'red'});
-                const currentPlayer = {socketId: socket.id, name: name, avatar: avatar, team:'red'};
-                soccerIo.to(roomList[roomId].masterId).emit("join", currentPlayer); 
-                roomList[roomId].listPlayer.push(currentPlayer);
-                listPlayer[socket.id]["obj"] = currentPlayer;
-                ++roomList[roomId].countRed;
-            }
-        }
-    }
-
-    if(type === 'create') {
-        const roomId = randomId().toString();
-        roomList[ roomId] = {masterId: socket.id, listPlayer: [], countBlue: 0, countRed: 0, isPlayed: false};
-        socket.emit('create', {roomId: roomId});
-        listMaster[socket.id] =roomId;
-    }
-
-    socket.on('move', (args) => {   
-        soccerIo.to(roomList[listPlayer[socket.id].roomId].masterId).emit("move", {socketId: socket.id, move: args});
-    })
-
-    socket.on('shoot', () => {
-        soccerIo.to(roomList[listPlayer[socket.id].roomId].masterId).emit('shoot', {socketId: socket.id})
-    })
-
-    socket.on('changeteam', (args) => {
-        const roomId = listPlayer[socket.id].roomId;
-        if(listPlayer[socket.id].obj.team === 'blue') {
-            ++roomList[roomId].countRed;
-            --roomList[roomId].countBlue;
-            listPlayer[socket.id].obj.team = 'red';
-        } else {
-            ++roomList[roomId].countBlue;
-            --roomList[roomId].countRed;
-            listPlayer[socket.id].obj.team = 'blue';
-        }
-        soccerIo.to(roomList[roomId].masterId).emit("changeteam", listPlayer[socket.id].obj);
-    })
-
-    socket.on('startgame', () => {
-        soccerIo.to(listMaster[socket.id]).emit('startgame');
-        roomList[listMaster[socket.id]].isPlayed = true;
-    })
-
-    socket.on('endgame', () => {
-        soccerIo.to(listMaster[socket.id]).emit('endgame');
-        roomList[listMaster[socket.id]].isPlayed = false;
-    })
-
-    socket.on('test', (args) => {
-        console.log(args);
-    })
-
-    socket.on('disconnect', () => {
-        if(listMaster[socket.id]) {
-            soccerIo.to(listMaster[socket.id]).emit('status', {type: 'error', message: 'The owner has left the room'});
-            delete roomList[listMaster[socket.id]];
-            delete listMaster[socket.id];
-        } 
-
-        if(listPlayer[socket.id]) {
-            if(!roomList[listPlayer[socket.id].roomId]) return;
-            soccerIo.to(roomList[listPlayer[socket.id].roomId].masterId).emit('status', {type: 'leave', socketId: socket.id});
-            roomList[listPlayer[socket.id].roomId].listPlayer = roomList[listPlayer[socket.id].roomId].listPlayer.filter((player) => player.socketId !== socket.id);
-            if(listPlayer[socket.id].obj.team === 'blue') {
-                --roomList[listPlayer[socket.id].roomId].countBlue;
-            } else {
-                --roomList[listPlayer[socket.id].roomId].countRed;
-            }
-            delete listPlayer[socket.id];
-        }
-    })
-})
-
-
-const auth = (roomId, password) => {
-    if(roomList[roomId]) {
-
-        if(roomList[roomId].password && roomList[roomId].password !== password) {
-            return {type: "error", message: "Wrong Password"};
-        } else {
-            if(roomList[roomId].countBlue + roomList[roomId].countRed === 12) {
-                return {type: "error", message: "Room was enough people"};
-            } else if(roomList[roomId].isPlayed){
-                return {type: "error", message: "The game has already started"}
-            } else {
-                return {type: "success"};
-            }
-        }
-    } else {
-        return {type: "error", message: "Room does not exist"};
-    }
-}
+handleSoccerSocket(soccerIo);
+handleTowerSocket(towerIo);
 
 const handleAvatar = (url) => {
     const newAvatar = url.substring(0, url.lastIndexOf(".")) + ".png"

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/tower/remote.css">
+    <link rel="stylesheet" href="/tower/common.css">
+    <title>TOWER - Remote</title>
+    <link rel="icon" href="/img/tower.png" >
+    <link rel="apple-touch-icon" href="/img/tower.png" >
+    <meta name="theme-color" content="#000000" >
+</head>
+<body>
+    <button class="touch">
+        TOUCH
+    </button>
+    <button class="start">
+        START
+    </button>
+    <h5 class="wait">Wait for your turn</h5>
+    <img class="share" src="https://img.icons8.com/material-outlined/48/000000/share.png"/>
+</body>
+<script src="https://cdn.socket.io/4.4.0/socket.io.min.js" integrity="sha384-1fOn6VtTq3PWwfsOrk45LnYcGosJwzMHv+Xh/Jx5303FVOXzEnw0EpLv30mtjmlj" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.1/dist/js.cookie.min.js" ></script>
+<script>
+    $ = document.querySelector.bind(document);
+	$$ = document.querySelectorAll.bind(document);
+    const params = (new URL(document.location)).searchParams;
+    const userName = params.get('name'); 
+    const roomId = params.get('roomId');    
+    if(!userName || !roomId || !Cookies.get('avatar')) {
+        window.location.href = "/tower/join";
+    }
+    const socket = io({
+        path: "/towersocket",
+        query: {type: "join", name: userName, roomId: roomId, avatar: Cookies.get('avatar')}
+    });
+
+    socket.on('error', (args) => {
+        alert(args);
+        window.location.href = "/tower/join";
+    })
+
+    socket.on('showstart', (args) => {
+        $(".wait").style.display = "none";
+        $(".start").style.display = "block";
+    })
+
+    socket.on('newturn', (args) => {
+        if(args === socket.id) {
+            $(".wait").style.display = "none";
+            $(".touch").style.display = "block";
+        }
+    })
+
+    $(".touch").onclick = () => {
+        socket.emit("touch");
+        $(".wait").style.display = "block";
+        $(".touch").style.display = "none";
+    }
+
+    $(".start").onclick = () => {
+        $(".wait").style.display = "block";
+        $(".start").style.display = "none";
+        socket.emit("play")
+    }
+
+    $(".share").onclick = () => {
+        navigator.clipboard.writeText(`https://hiepnguyen.site/tower/join?roomId=${roomId}`)
+    }
+</script>
+</html>

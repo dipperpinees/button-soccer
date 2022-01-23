@@ -1,10 +1,4 @@
-body {
-    display: flex;
-    align-items: center;
-    flex-direction: column;
-    justify-content: center;
-    touch-action: pan-x pan-y;
-}
+
 
 #form {
     display: flex;
@@ -18,15 +12,15 @@ body {
     padding: 12px 24px;
     margin: 8px;
     width: 80%;
-    border: none;
-    border-radius: 64px;
+    border: 1px solid #000;
 }
 
 #form button {
     width: 80%;
-    border-radius: 64px;
     padding: 12px 24px;
     margin: 8px;
+    border: 1px solid #000;
+    font-weight: 600;
 }
 
 .loading {
@@ -72,7 +66,6 @@ body {
     width: 260px;
     height: 80px;
     padding: 12px;
-    border-radius: 8px;
     border: 1px solid #000;
     display: flex;
     align-items: center;
@@ -82,7 +75,8 @@ body {
 
 .modal-box button {
     padding: 2px 16px;
-    background-color: #ccc;
+    background-color: white;
+    border: 1px solid #000;
 }
 
 .modal-box button:hover {
@@ -108,4 +102,18 @@ body {
 .upload:hover {
     opacity: 0.8;
     cursor: pointer;
+}
+
+button:hover {
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+input:focus-visible {
+    outline: none;
+}
+
+a {
+    text-decoration: none;
+    color: black;
 }

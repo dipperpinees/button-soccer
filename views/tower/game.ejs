@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width,user-scalable=no">
+  	<title>TOWER TOGETHER</title>
+	<link rel="stylesheet" href="/tower/style.css">
+	<link rel="icon" href="/img/tower.png" >
+    <link rel="apple-touch-icon" href="/img/tower.png" >
+    <meta name="theme-color" content="#000000" >
+</head>
+<body>
+	<div id="container">
+		<div id="game"></div>
+		<div id="score">0</div>
+		<div class="game-over">
+			<h2>Game Over</h2>
+			<p>You did great, you're the best.</p>
+		</div>
+		<div id="player">
+			<img src="" alt="player">
+			<h4></h4>
+		</div>
+	</div>
+	<h2 class="roomid"></h2>
+	<div class="waiting">
+		
+		<img class="fullscreen" src="https://img.icons8.com/material-outlined/48/000000/full-screen--v1.png"/>
+	</div>
+	<script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r83/three.min.js'></script>
+	<script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/latest/TweenMax.min.js'></script>
+	<script src="https://cdn.socket.io/4.4.0/socket.io.min.js" integrity="sha384-1fOn6VtTq3PWwfsOrk45LnYcGosJwzMHv+Xh/Jx5303FVOXzEnw0EpLv30mtjmlj" crossorigin="anonymous"></script>
+	<script>
+		$ = document.querySelector.bind(document);
+		$$ = document.querySelectorAll.bind(document);
+		const socket = io({path: "/towersocket", query: {type: 'create'}});
+		let listPlayer = [];
+		let indexPlayer = 0;
+
+		const handleNewTurn = () => {
+			if(game.state === "ended") {
+				setTimeout(() => {
+					indexPlayer = 0;
+					socket.emit("endgame");
+					$("#container").style.display = 'none';
+					$(".roomid").style.display = 'block';
+					$(".waiting").style.display = 'flex';
+				}, 5000)
+				return;
+			};
+			if(indexPlayer >= listPlayer.length) {
+				listPlayer.sort(function() {
+  					return .5 - Math.random();
+				});
+				indexPlayer = 0;
+			}
+			socket.emit("newturn", listPlayer[indexPlayer].socketId);
+			$("#player img").src = listPlayer[indexPlayer].avatar;
+			$("#player h4").textContent = listPlayer[indexPlayer].name;
+			indexPlayer++;
+		}
+
+		socket.on('create', (args) => {
+			$(".roomid").textContent = "Room Id: " + args.roomId;
+		})
+
+		socket.on('play', () => {
+			listPlayer.sort(function() {
+  				return .5 - Math.random();
+			});
+			game.onAction();
+			handleNewTurn();
+			$("#container").style.display = 'block';
+			$(".roomid").style.display = 'none';
+			$(".waiting").style.display = 'none';
+		})
+
+		socket.on('join', ({name, avatar, socketId}) => {
+			const player = document.createElement("div");
+			player.classList.add("waiting-item");
+			player.classList.add(`player-${socketId}`)
+			const img = document.createElement("img");
+			img.src = avatar;
+			player.appendChild(img);
+			const playerName = document.createElement("p");
+			playerName.textContent = name;
+			player.appendChild(playerName);
+			$(".waiting").appendChild(player);
+			listPlayer.push({name, avatar, socketId});
+		})
+
+		socket.on('status', (args) => {
+			if(args.type === "leave") {
+				$(`.player-${args.socketId}`).remove();
+				listPlayer = listPlayer.filter(player => player.socketId !== args.socketId);
+			}
+		})
+
+		socket.on('touch', () => {
+			game.onAction();
+			setTimeout(() => {
+				handleNewTurn();
+			}, 500)
+		})
+
+		const toggleFullSceen = () => {
+    		if (!document.fullscreenElement) {
+      			document.documentElement.requestFullscreen();
+				  $(".fullscreen").src = "https://img.icons8.com/ios-filled/52/000000/compress.png";
+    		} else {
+      			if (document.exitFullscreen) {
+        			document.exitFullscreen();
+					$(".fullscreen").src = "https://img.icons8.com/material-outlined/48/000000/full-screen--v1.png";
+      			}
+    		}
+  		};
+
+		$(".fullscreen").onclick = toggleFullSceen
+	</script>
+	<script src="/tower/script.js"></script>
+</body>
+</html>
