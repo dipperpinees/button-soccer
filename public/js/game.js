@@ -607,7 +607,6 @@ const game = (listPlayer, ballSrc, startTime) => {
 
     const handleMoveBall = () => {
         if(Math.abs(ball.value.x) < 1 && Math.abs(ball.value.y) < 1) return;
-
         ball.value.x  = ball.value.x / 1.012;
         ball.value.y  = ball.value.y / 1.012;
 

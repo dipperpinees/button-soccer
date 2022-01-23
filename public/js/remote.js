@@ -39,7 +39,7 @@ const socket = io({
 socket.on('status', (args) => {
     if(args.type === 'error') {
         alert(args.message);
-        window.location.href="/join";
+        window.location.href="/bs/join";
     }
 })
 
