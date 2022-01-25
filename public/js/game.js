@@ -23,7 +23,7 @@ const game = (listPlayer, ballSrc, startTime) => {
     const SCALE_CORN = GAME_HEIGHT / 20 / 250;
     const SCALE_CENTER_CIRCLE = GAME_HEIGHT / 4 / 500;
     const SCALE_GOAL = GAME_HEIGHT / 4 / 149;
-    const CAM_SCALE = 1.2;
+    const CAM_SCALE = 1.25;
     let isGoal = false;
     let isMove = false;
     let playerData = {};
