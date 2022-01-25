@@ -10,8 +10,8 @@ const game = (listPlayer, ballSrc, startTime) => {
     const GAME_HEIGHT = window.screen.height * window.devicePixelRatio;
     const PITCH_X = GAME_WIDTH / 12;
     const PITCH_Y = GAME_HEIGHT / 16;
-    const SCALE_BALL = GAME_HEIGHT / 27 / 256;
-    const SCALE_PLAYER = GAME_HEIGHT / 23 / 100;
+    const SCALE_BALL = GAME_HEIGHT / 40 / 256;
+    const SCALE_PLAYER = GAME_HEIGHT / 34 / 100;
     const STADIUM_WIDTH = GAME_WIDTH - PITCH_X * 2;
     const STADIUM_HEIGHT = GAME_HEIGHT - PITCH_Y * 2;
     const STRAIGHT_PLAYER_SPEED = GAME_WIDTH / 7;
@@ -23,6 +23,7 @@ const game = (listPlayer, ballSrc, startTime) => {
     const SCALE_CORN = GAME_HEIGHT / 20 / 250;
     const SCALE_CENTER_CIRCLE = GAME_HEIGHT / 4 / 500;
     const SCALE_GOAL = GAME_HEIGHT / 4 / 149;
+    const CAM_SCALE = 1.2;
     let isGoal = false;
     let isMove = false;
     let playerData = {};
@@ -58,6 +59,9 @@ const game = (listPlayer, ballSrc, startTime) => {
         debug: true,
     });
 
+    camScale(CAM_SCALE);
+    camPos(GAME_WIDTH/2, GAME_HEIGHT/2)
+    // camPos(GAME_WIDTH-GAME_WIDTH/(CAM_SCALE*2), GAME_HEIGHT - GAME_HEIGHT/(CAM_SCALE*2));
     loadSprite("circle", "/img/circlecenter.png");
     loadSprite('corn', '/img/corn.png');
     loadSprite('pencircle', '/img/circlepenalty.png')
@@ -131,7 +135,7 @@ const game = (listPlayer, ballSrc, startTime) => {
     }
     
     const buildStadium = () => {
-        for(let i = 0; i < 12; i++) {
+        for(let i = 0; i < 13; i++) {
             add([
                 pos(PITCH_X * i , 0),
                 rect(PITCH_X / 2, GAME_HEIGHT),
@@ -146,6 +150,7 @@ const game = (listPlayer, ballSrc, startTime) => {
             scale(SCALE_CENTER_CIRCLE),
             "linecircle"
         ])
+
         add([
             pos(PITCH_X, GAME_HEIGHT - PITCH_Y - SCALE_CORN * 250),
             sprite('corn'),
@@ -182,7 +187,7 @@ const game = (listPlayer, ballSrc, startTime) => {
             rect(4, STADIUM_HEIGHT),
             "linecenter"
         ])
-    
+
         add([
             pos(GAME_WIDTH / 2, GAME_HEIGHT / 2),
             circle(8),
@@ -381,29 +386,18 @@ const game = (listPlayer, ballSrc, startTime) => {
         }
     }
     
-    const resetBall = (ball) => {
-        ball.value.touchId = null;
-        ball.value.x = 0;
-        ball.value.y = 0;
-        
-        ball.moveTo(GAME_WIDTH / 2 - WIDTH_BALL/2, GAME_HEIGHT / 2 - WIDTH_BALL/2);
-        every("player", (s) => {
-            const {startX, startY} = s.value;
-            s.moveTo(startX, startY)
-        })
-    }
-    
     const handleShowGoal = (touchPlayer, touchTeam, time, teamGoal) => {
         // wait(2, () => {
+        const {x,y} = camPos();
         add([
             sprite("goal"),
-            pos(GAME_WIDTH / 2 - SCALE_GOAL*434/2, GAME_HEIGHT / 2 - SCALE_GOAL*149/2),
+            pos(x - SCALE_GOAL*434/2, y - SCALE_GOAL*149/2),
             scale(SCALE_GOAL),
             "goal",
         ])
         
         add([
-            pos(GAME_WIDTH / 2 - SCALE_GOAL*434/2 + 40, GAME_HEIGHT / 2 + SCALE_GOAL*149/2),
+            pos(x - SCALE_GOAL*434/2 + 40, y + SCALE_GOAL*149/2),
             text(`${touchPlayer}  ${touchTeam !== teamGoal ? "(OG)" : ""} ${time}`, {
                 size: GAME_HEIGHT / 30,
             }),
@@ -421,26 +415,26 @@ const game = (listPlayer, ballSrc, startTime) => {
 
     //score board
     const blueScore = add([
-        pos(GAME_WIDTH / 2 - GAME_WIDTH / 14, GAME_HEIGHT / 80),
+        pos(GAME_WIDTH / 2 - GAME_WIDTH / 16,GAME_HEIGHT/2 - GAME_HEIGHT/(CAM_SCALE*2) + GAME_HEIGHT / 80),
         text("0", {
-            size: GAME_WIDTH / 40, // 48 pixels tall
+            size: GAME_WIDTH / 50, // 48 pixels tall
             font: 'sinko'
         }),
         {value: 0},
         color(66, 180, 230)
     ])
     const time = add([
-        pos(GAME_WIDTH / 2  - GAME_WIDTH / 26, GAME_HEIGHT / 80),
+        pos(GAME_WIDTH / 2  - GAME_WIDTH / 28, GAME_HEIGHT/2 - GAME_HEIGHT/(CAM_SCALE*2) + GAME_HEIGHT/80),
         text("", {
-            size: GAME_WIDTH / 50,
+            size: GAME_WIDTH / 60,
             font: 'sinko',
         }),
         { value: startTime }
     ])
     const redScore = add([
-        pos(GAME_WIDTH / 2 + GAME_WIDTH / 16, GAME_HEIGHT / 80),
+        pos(GAME_WIDTH / 2 + GAME_WIDTH / 22, GAME_HEIGHT/2 - GAME_HEIGHT/(CAM_SCALE*2) + GAME_HEIGHT / 80),
         text("0", {
-            size: GAME_WIDTH / 40, // 48 pixels tall
+            size: GAME_WIDTH / 50, 
             font: 'sinko'
         }),
         {value: 0},
@@ -524,35 +518,75 @@ const game = (listPlayer, ballSrc, startTime) => {
         }
     })
 
+    const resetBall = (ball) => {
+        ball.value.touchId = null;
+        ball.value.x = 0;
+        ball.value.y = 0;
+        
+        ball.moveTo(GAME_WIDTH / 2 - WIDTH_BALL/2, GAME_HEIGHT / 2 - WIDTH_BALL/2);
+        camPos(GAME_WIDTH / 2, GAME_HEIGHT / 2);
+        every("player", (s) => {
+            const {startX, startY} = s.value;
+            s.moveTo(startX, startY)
+        })
+    }
+
+    const handleMoveScoreBoard = (x, y) => {
+        blueScore.moveTo(x - GAME_WIDTH / 14,y - GAME_HEIGHT/(CAM_SCALE*2) + GAME_HEIGHT / 80);
+        time.moveTo(x  - GAME_WIDTH / 26, y - GAME_HEIGHT/(CAM_SCALE*2) + GAME_HEIGHT/80);
+        redScore.moveTo(x + GAME_WIDTH / 18, y - GAME_HEIGHT/(CAM_SCALE*2) + GAME_HEIGHT / 80);
+    }
+
+    const handleMoveCam = (posX, posY) => {
+        // && y>GAME_HEIGHT/(CAM_SCALE*2) && y < GAME_HEIGHT - GAME_HEIGHT/(CAM_SCALE*2)
+        if(posX < GAME_WIDTH/(CAM_SCALE*2)) {
+            posX = GAME_WIDTH/(CAM_SCALE*2);
+        }
+        if(posX > GAME_WIDTH - GAME_WIDTH/(CAM_SCALE*2)) {
+            posX = GAME_WIDTH - GAME_WIDTH/(CAM_SCALE*2);
+        }
+        if(posY < GAME_HEIGHT/(CAM_SCALE*2) ) {
+            posY =GAME_HEIGHT/(CAM_SCALE*2);
+        }
+        if(posY > GAME_HEIGHT - GAME_HEIGHT/(CAM_SCALE*2)) {
+            posY = GAME_HEIGHT - GAME_HEIGHT/(CAM_SCALE*2);
+        }
+        if(posX !== camPos().x || posY !== camPos().y) {
+            camPos(posX, posY);
+            handleMoveScoreBoard(posX, posY);
+        }
+    }
+
     const handleKeepBall = (direction) => {
-        const playerPosX = playerData[ball.value.touchId].player.pos.x;
-        const playerPosY = playerData[ball.value.touchId].player.pos.y;
-        const playerCenterX = playerPosX + WIDTH_PLAYER/2;
-        const playerCenterY = playerPosY + WIDTH_PLAYER/2;
+        // const playerData[ball.value.touchId].player.pos.x = playerData[ball.value.touchId].player.pos.x;
+        // const playerData[ball.value.touchId].player.pos.y = playerData[ball.value.touchId].player.pos.y;
+        // const playerData[ball.value.touchId].player.pos.x+WIDTH_PLAYER/2 = playerData[ball.value.touchId].player.pos.x + WIDTH_PLAYER/2;
+        // const playerData[ball.value.touchId].player.pos.y + WIDTH_PLAYER/2 = playerData[ball.value.touchId].player.pos.y + WIDTH_PLAYER/2;
+        handleMoveCam(playerData[ball.value.touchId].player.pos.x,playerData[ball.value.touchId].player.pos.y);
         switch(direction) {
             case "right": 
-                ball.moveTo(playerCenterX + WIDTH_PLAYER / 2, playerCenterY - WIDTH_BALL / 2);
+                ball.moveTo(playerData[ball.value.touchId].player.pos.x+WIDTH_PLAYER/2 + WIDTH_PLAYER / 2, playerData[ball.value.touchId].player.pos.y + WIDTH_PLAYER/2 - WIDTH_BALL / 2);
                 break;
             case "left": 
-                ball.moveTo(playerCenterX - WIDTH_PLAYER / 2 - WIDTH_BALL , playerCenterY - WIDTH_BALL / 2);
+                ball.moveTo(playerData[ball.value.touchId].player.pos.x+WIDTH_PLAYER/2 - WIDTH_PLAYER / 2 - WIDTH_BALL , playerData[ball.value.touchId].player.pos.y + WIDTH_PLAYER/2 - WIDTH_BALL / 2);
                 break;
             case "up": 
-                ball.moveTo(playerCenterX - WIDTH_BALL / 2, playerCenterY - WIDTH_PLAYER / 2 - WIDTH_BALL)
+                ball.moveTo(playerData[ball.value.touchId].player.pos.x+WIDTH_PLAYER/2 - WIDTH_BALL / 2, playerData[ball.value.touchId].player.pos.y + WIDTH_PLAYER/2 - WIDTH_PLAYER / 2 - WIDTH_BALL)
                 break;
             case "down":
-                ball.moveTo(playerCenterX - WIDTH_BALL / 2, playerCenterY + WIDTH_PLAYER / 2);
+                ball.moveTo(playerData[ball.value.touchId].player.pos.x+WIDTH_PLAYER/2 - WIDTH_BALL / 2, playerData[ball.value.touchId].player.pos.y + WIDTH_PLAYER/2 + WIDTH_PLAYER / 2);
                 break;
             case "up left":
-                ball.moveTo(playerPosX - WIDTH_BALL / 2, playerPosY - WIDTH_BALL / 2);
+                ball.moveTo(playerData[ball.value.touchId].player.pos.x - WIDTH_BALL / 2, playerData[ball.value.touchId].player.pos.y - WIDTH_BALL / 2);
                 break;
             case "up right":
-                ball.moveTo(playerPosX + WIDTH_PLAYER - WIDTH_BALL / 2 , playerPosY - WIDTH_BALL / 2)
+                ball.moveTo(playerData[ball.value.touchId].player.pos.x + WIDTH_PLAYER - WIDTH_BALL / 2 , playerData[ball.value.touchId].player.pos.y - WIDTH_BALL / 2)
                 break;
             case "down right": 
-                ball.moveTo(playerPosX + WIDTH_PLAYER - WIDTH_BALL / 2, playerPosY + WIDTH_PLAYER - WIDTH_BALL / 2 )
+                ball.moveTo(playerData[ball.value.touchId].player.pos.x + WIDTH_PLAYER - WIDTH_BALL / 2, playerData[ball.value.touchId].player.pos.y + WIDTH_PLAYER - WIDTH_BALL / 2 )
                 break;
             case "down left": 
-                ball.moveTo(playerPosX - WIDTH_BALL / 2 , playerPosY + WIDTH_PLAYER - WIDTH_BALL / 2 )
+                ball.moveTo(playerData[ball.value.touchId].player.pos.x - WIDTH_BALL / 2 , playerData[ball.value.touchId].player.pos.y + WIDTH_PLAYER - WIDTH_BALL / 2 )
                 break;
         }
     }
@@ -573,6 +607,7 @@ const game = (listPlayer, ballSrc, startTime) => {
                     destroyAll("goalplayer");
                     isGoal = false;
                     resetBall(ball);
+                    handleMoveScoreBoard(GAME_WIDTH/2, GAME_HEIGHT/2);
                     wait(2, () => {
                         play("whistle");
                         isMove = true;
@@ -595,6 +630,7 @@ const game = (listPlayer, ballSrc, startTime) => {
                     destroyAll("goalplayer");
                     isGoal = false;
                     resetBall(ball);
+                    handleMoveScoreBoard(GAME_WIDTH/2, GAME_HEIGHT/2);
                     wait(2, () => {
                         play("whistle");
                         isMove = true;
@@ -609,7 +645,8 @@ const game = (listPlayer, ballSrc, startTime) => {
         if(Math.abs(ball.value.x) < 1 && Math.abs(ball.value.y) < 1) return;
         ball.value.x  = ball.value.x / 1.012;
         ball.value.y  = ball.value.y / 1.012;
-
+        handleMoveCam(ball.pos.x,ball.pos.y);
+    
         ball.move(ball.value.x, ball.value.y);
     }
 
@@ -739,12 +776,12 @@ const game = (listPlayer, ballSrc, startTime) => {
         }
     })
 
-    onKeyDown("up", () => {
-        handleMove(0, -STRAIGHT_PLAYER_SPEED, "test");
-        if("test" === ball.value.touchId) {
-            ball.value.direction = "up";
-        }   
-    })
+    // onKeyDown("up", () => {
+    //     handleMove(0, -STRAIGHT_PLAYER_SPEED, "test");
+    //     if("test" === ball.value.touchId) {
+    //         ball.value.direction = "up";
+    //     }   
+    // })
 
     // onKeyDown("down", () => {
     //     if("test" === ball.value.touchId) {
