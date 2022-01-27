@@ -32,14 +32,13 @@ $(".sharelink").onclick = () => {
     navigator.clipboard.writeText(`https://bs.hiepnguyen.site/join?roomId=${roomId}`);
 }
 const socket = io({
-    path: "/bssocket",
     query: {type: "join", name: username, password: password, roomId: roomId, avatar: Cookies.get('avatar')}
 });
 
 socket.on('status', (args) => {
     if(args.type === 'error') {
         alert(args.message);
-        window.location.href="/bs/join";
+        window.location.href="/join";
     }
 })
 
