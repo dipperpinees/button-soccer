@@ -120,7 +120,7 @@
                 return response.json();
             }).then(data => {
                 Cookies.set("avatar", data.avatar, { expires: 999999 })
-                Cookies.set("avatar", data.avatar, { domain: "tower.hiepnguyen.site", expires: 999999 })
+                Cookies.set("avatar", data.avatar, { domain: ".hiepnguyen.site", expires: 999999 })
             })
         } 
         if(Cookies.get("avatar")) {
@@ -128,7 +128,6 @@
         } else {
             showModal("Image file required");
         }
-        
         $(".loading").style.display = "none";
     }
 </script>
