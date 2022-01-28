@@ -25,7 +25,6 @@ class Game {
             const posY = TEAM_POSITION[player.team][count].y;
             const currentPlayer = new Player(player, posX, posY);
             this.handleCollidesPlayerAndBall(currentPlayer);
-            currentPlayer.update();
             this.playerData[player.socketId] = currentPlayer;
         })
     }
@@ -231,6 +230,9 @@ class Game {
             this.ball.handleKeepBall();
             this.handleMoveCam(this.playerData[this.ball.touchId].player.pos.x, this.playerData[this.ball.touchId].player.pos.y);
         })
+        onUpdate("player", (s) => {
+            s.movePlayer();
+        })
     }
 
     start () {
@@ -247,8 +249,8 @@ class Game {
         this.stadium.render();
         this.ball.render();
         this.scoreBoard.render();
-        this.update();
         this.addListPlayer();
+        this.update();
 
         //add socket
         this.handleSocket();

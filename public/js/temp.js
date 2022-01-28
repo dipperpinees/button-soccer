@@ -24,6 +24,7 @@ const game = (listPlayer, ballSrc, startTime) => {
         "blue": {},
         "red": {}
     }
+    console.log(GAME_WIDTH, STRAIGHT_PLAYER_SPEED);
     const teamPos = {
         "blue": [
             {x: 3 / 8 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT / 2 - WIDTH_PLAYER / 2},

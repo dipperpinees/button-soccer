@@ -37,6 +37,7 @@ class Player {
             area(),
             scale(SCALE_PLAYER),
             {value: {startX: posX, startY: posY}},
+            {movePlayer: this.update()},
             "player",
         ])
         this.handleCollides();
@@ -61,11 +62,11 @@ class Player {
     }
 
     update () {
-        onUpdate("player", () => {
+        return () => {
             if(Math.abs(this.x) < 1 && Math.abs(this.y) < 1) return;
             this.x  = this.x / 1.08;
             this.y  = this.y / 1.08;
             this.player.move(this.x, this.y);
-        })   
+        }  
     }
 }

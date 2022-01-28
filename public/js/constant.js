@@ -34,3 +34,4 @@ const TEAM_POSITION = {
         {x: GAME_WIDTH - WIDTH_PLAYER - 1 / 8 * STADIUM_WIDTH - PITCH_X, y: PITCH_Y + 1/4 * STADIUM_HEIGHT},
     ]
 }
+
