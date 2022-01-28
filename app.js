@@ -6,6 +6,7 @@ const cloudinary =  require("cloudinary").v2;
 const multer = require("multer");
 const cookieParser = require('cookie-parser');
 const server = require("http").Server(app);
+const cors = require('cors');
 
 const io = require("socket.io")(server, {
     cors: {
@@ -17,6 +18,19 @@ server.listen(process.env.PORT || 8001);
 
 //register view engine
 app.set('view engine', 'ejs');
+
+//cors
+var allowlist = ['https://tower.hiepnguyen.site']
+var corsOptionsDelegate = function (req, callback) {
+  var corsOptions;
+  if (allowlist.indexOf(req.header('Origin')) !== -1) {
+    corsOptions = { origin: true } // reflect (enable) the requested origin in the CORS response
+  } else {
+    corsOptions = { origin: false } // disable CORS for this request
+  }
+  callback(null, corsOptions) // callback expects two parameters: error and options
+}
+app.use(cors(corsOptionsDelegate))
 
 //middleware & static files
 app.use(express.static('public'));
