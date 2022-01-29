@@ -79,9 +79,10 @@ $(".settings-start").onclick = () => {
     makeGameConstant();
     
     // game(Object.values(listPlayer), $(".ball-choose").getAttribute("src"), 60 * Number($(".time-choose").getAttribute("time")));
+    
     const game = new Game(Object.values(listPlayer), $(".ball-choose").getAttribute("src"), 60 * Number($(".time-choose").getAttribute("time")), Number($(".graphics").value));
     game.start();
-
+    
     //open full screen
     if(!isFullscreen()) {
         fullscreen();

@@ -135,10 +135,12 @@ io.on('connection', async (socket) => {
     }
 
     socket.on('move', (args) => {   
+        if(!roomList[playerList[socket.id]]) return;
         io.to(roomList[playerList[socket.id].roomId].masterId).emit("move", {socketId: socket.id, move: args});
     })
 
     socket.on('shoot', () => {
+        if(!roomList[playerList[socket.id]]) return;
         io.to(roomList[playerList[socket.id].roomId].masterId).emit('shoot', {socketId: socket.id})
     })
 
@@ -164,6 +166,10 @@ io.on('connection', async (socket) => {
     socket.on('endgame', () => {
         io.to(masterList[socket.id]).emit('endgame');
         roomList[masterList[socket.id]].isPlayed = false;
+    })
+
+    socket.on('test', () => {
+        console.log("loop")
     })
 
     socket.on('disconnect', () => {

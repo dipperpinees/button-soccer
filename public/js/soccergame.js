@@ -104,27 +104,39 @@ class Game {
     }
 
     destroy() {
+        console.log("xoa game");
         this.sound.pause();
-        debug.paused = true 
         //destroy all game's object
         every((obj) => {
             destroy(obj)
         })
+        this.isMove = false;
+        this.scoreBoard = null;
+        this.ball = null;
+        this.sound = null;
+        this.goal = null;
+        this.stadium = null;
+        this.playerData = null;
+        debug.paused = true;
+
+        socket.off("shoot");
+        socket.off("move");
         fullscreen(!isFullscreen());
         const canvas = $('canvas');
-        canvas.remove() 
+        canvas.remove() ;
         //return waiting screen
         $(".wait").style.display = "flex";
     }
 
     countTime() {
-        loop(1, () => {
+        const loop = setInterval(() => {
             if(!this.isMove) return;
             this.scoreBoard.countTime();
+            console.log(this.scoreBoard.time);
             if(!this.isGoal && this.scoreBoard.time === 0) {
+                clearInterval(loop);
                 this.sound.playEndWhistle();
                 socket.emit('endgame');
-    
                 //stop move
                 this.isMove = false;
     
@@ -136,7 +148,7 @@ class Game {
                     this.destroy();
                 })
             }
-        })
+        }, 1000)
     }
 
     resetAfterGoal () {
@@ -267,5 +279,9 @@ class Game {
             this.sound.playWhistle();
             this.isMove = true;
         })
+    }
+
+    loadGameObject () {
+
     }
 }
