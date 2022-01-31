@@ -29,27 +29,6 @@ class Game {
         })
     }
 
-    handleShowLog (blueScore, redScore, logGame) {
-        $(".lastmatch-detail > p").textContent = `${blueScore} - ${redScore}`;
-        while ( $(".blue-detail").hasChildNodes()) {
-            $(".blue-detail").removeChild( $(".blue-detail").lastChild);
-        }
-        while ( $(".red-detail").hasChildNodes()) {
-            $(".red-detail").removeChild( $(".red-detail").lastChild);
-        }
-        Object.keys(logGame["blue"]).forEach(key => {
-            const div = document.createElement('div');
-            div.textContent = `${key} (${logGame["blue"][key].join(", ")})`;
-            $(".blue-detail").appendChild(div);
-        })
-    
-        Object.keys(logGame["red"]).forEach(key => {
-            const div = document.createElement('div');
-            div.textContent = `${key} (${logGame["red"][key].join(", ")})`;
-            $(".red-detail").appendChild(div);
-        })
-    }
-
     handleSocket() {
         socket.on("move", ({socketId, move}) => {
             if(!this.isMove) return;
@@ -104,7 +83,6 @@ class Game {
     }
 
     destroy() {
-        console.log("xoa game");
         this.sound.pause();
         //destroy all game's object
         every((obj) => {
@@ -117,15 +95,7 @@ class Game {
         this.goal = null;
         this.stadium = null;
         this.playerData = null;
-        debug.paused = true;
-
-        socket.off("shoot");
-        socket.off("move");
-        fullscreen(!isFullscreen());
-        const canvas = $('canvas');
-        canvas.remove() ;
-        //return waiting screen
-        $(".wait").style.display = "flex";
+        window.location.reload();
     }
 
     countTime() {
@@ -144,7 +114,10 @@ class Game {
                 this.ball.x = 0;
                 this.ball.y = 0;
                 wait(4, () => {
-                    this.handleShowLog(this.scoreBoard.blueScore.text, this.scoreBoard.redScore.text, this.logGame);
+                    localStorage.setItem("logmatch", JSON.stringify({
+                        blueScore: this.scoreBoard.blueScore.text, 
+                        redScore: this.scoreBoard.redScore.text, 
+                        logGame: this.logGame}))
                     this.destroy();
                 })
             }

@@ -45,7 +45,7 @@ class Player {
 
     handleCollides () {
         this.player.collides("player", (t) => {
-            this.player.move(6*(this.player.pos.x-t.pos.x), 6*(this.player.pos.y-t.pos.y));
+            this.player.move(8*(this.player.pos.x-t.pos.x), 8*(this.player.pos.y-t.pos.y));
         })
         this.player.collides("wallleft",  () => {
             this.player.move(STRAIGHT_PLAYER_SPEED*2.5, 0);

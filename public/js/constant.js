@@ -24,7 +24,7 @@ function makeGameConstant() {
     SCALE_CORN = GAME_HEIGHT / 20 / 250;
     SCALE_CENTER_CIRCLE = GAME_HEIGHT / 4 / 500;
     SCALE_GOAL = GAME_HEIGHT / 4 / 149;
-    CAM_SCALE = 1.25;
+    CAM_SCALE = 1.3;
     TEAM_POSITION = {
         "blue": [
             {x: 3 / 8 * STADIUM_WIDTH + PITCH_X, y: GAME_HEIGHT / 2 - WIDTH_PLAYER / 2},

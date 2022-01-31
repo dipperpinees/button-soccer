@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<%- include('./header.ejs', {title: "Button Soccer", description: "Funny soccer game play with your friends"}) %>
+<%- include('./header.ejs', {title: `Button Soccer - ${roomId}`, description: "Funny soccer game play with your friends"}) %>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <link rel="stylesheet" href="/styles/game.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
@@ -26,7 +26,7 @@
             </ul>
         </div>
         <div class='settings'>
-            <h3 class='settings-roomid'></h3>
+            <h3 class='settings-roomid'>Room ID: <%=roomId %></h3>
             <div class="lastmatch">
                 <h5>Last Match</h5>
                 <div class="lastmatch-detail">
@@ -45,25 +45,25 @@
             </div>
             <div>
                 <ul class='settings-ball'>
-                    <li class='ball-choose' src="/img/ball1.png">
+                    <li class='ball-choose ball1' src="/img/ball1.png">
                         <img src="/img/ball1.png" alt="">
                     </li>
-                    <li src="/img/ball2.png">
+                    <li class='ball2' src="/img/ball2.png">
                         <img src="/img/ball2.png" alt="">
                     </li>
-                    <li src="/img/ball3.png">
+                    <li class='ball3'  src="/img/ball3.png">
                         <img src="/img/ball3.png" alt="">
                     </li>
-                    <li src="/img/ball4.png">
+                    <li class='ball4' src="/img/ball4.png">
                         <img src="/img/ball4.png" alt="">
                     </li>
-                    <li src="/img/ball5.png">
+                    <li class='ball5' src="/img/ball5.png">
                         <img src="/img/ball5.png" alt="">
                     </li>
-                    <li src="/img/ball6.png">
+                    <li class='ball6' src="/img/ball6.png">
                         <img src="/img/ball6.png" alt="">
                     </li>
-                    <li src="/img/ball7.png">
+                    <li class='ball7' src="/img/ball7.png">
                         <img src="/img/ball7.png" alt="">
                     </li>
                 </ul>
@@ -86,6 +86,7 @@
 </body>
 <script src="https://unpkg.com/kaboom/dist/kaboom.js"></script>
 <script src="https://cdn.socket.io/4.4.0/socket.io.min.js" integrity="sha384-1fOn6VtTq3PWwfsOrk45LnYcGosJwzMHv+Xh/Jx5303FVOXzEnw0EpLv30mtjmlj" crossorigin="anonymous"></script>
+<script>const roomId = "<%=roomId %>"</script>
 <script src="/js/constant.js"></script>
 <script src="/js/ball.js"></script>
 <script src="/js/player.js"></script>

@@ -7,6 +7,9 @@ const multer = require("multer");
 const cookieParser = require('cookie-parser');
 const server = require("http").Server(app);
 const cors = require('cors');
+const roomList = {};
+const playerList = {};
+const masterList = {};
 
 const io = require("socket.io")(server, {
     cors: {
@@ -44,8 +47,24 @@ app.get("/", (req, res) => {
     res.render("home")
 })
 
-app.get("/play", (req, res) => {
-    res.render("game");
+app.get("/room", (req, res) => {
+    const roomId = randomId().toString();
+    roomList[roomId] = {masterId: null, playerList: [], countBlue: 0, countRed: 0, isPlayed: false};
+    res.redirect(`/play/${roomId}`)
+})
+
+app.post("/room", (req, res) => {
+    const {roomId, password} = req.query;
+    const {type, message} = authSoccerRoom(roomId, password);
+    if(type === "error") {
+        res.status(400).json({type, message});
+    } else {
+        res.json({type: 'success'});
+    }
+})
+
+app.get("/play/:roomId", (req, res) => {
+    res.render("game", {roomId: req.params.roomId});
 })
 
 app.get("/join", (req, res) => {
@@ -57,16 +76,6 @@ app.get("/join", (req, res) => {
 app.get("/remote", (req, res) => {
     const {name} = req.query;
     res.render("remote", {avatar: req.cookies.avatar, name: name});
-})
-
-app.post("/room", (req, res) => {
-    const {roomId, password} = req.query;
-    const {type, message} = authSoccerRoom(roomId, password);
-    if(type === "error") {
-        res.status(400).json({type, message});
-    } else {
-        res.json({type: 'success'});
-    }
 })
 
 app.post("/avatar", upload.single('avatar'),  (req, res) => {
@@ -96,10 +105,6 @@ app.get('*', function(req, res){
     res.status(404).render('404');
 });
 
-const roomList = {};
-const playerList = {};
-const masterList = {};
-
 io.on('connection', async (socket) => {
     const {type, roomId, name, password, avatar} = socket.handshake.query;
     if(type === 'join') {
@@ -128,19 +133,29 @@ io.on('connection', async (socket) => {
     }
 
     if(type === 'create') {
-        const roomId = randomId().toString();
-        roomList[ roomId] = {masterId: socket.id, playerList: [], countBlue: 0, countRed: 0, isPlayed: false};
-        socket.emit('create', {roomId: roomId});
-        masterList[socket.id] =roomId;
+        // const roomId = randomId().toString();
+        // roomList[ roomId] = {masterId: socket.id, playerList: [], countBlue: 0, countRed: 0, isPlayed: false};
+        if(roomList[roomId]) {
+            if(roomList[roomId].masterId) {
+                io.to(roomList[roomId].masterId).emit("create", "error");
+                delete masterList[roomList[roomId].masterId];
+            }
+            roomList[roomId].masterId = socket.id;
+            roomList[roomId].isPlayed = false;
+            masterList[socket.id] = roomId;
+            socket.emit('create', {playerList: roomList[roomId].playerList});
+        } else {
+            socket.emit("create", "error");
+        }  
     }
 
-    socket.on('move', (args) => {   
-        if(!roomList[playerList[socket.id]]) return;
+    socket.on('move', (args) => {  
+        if(!playerList[socket.id].roomId) return;
         io.to(roomList[playerList[socket.id].roomId].masterId).emit("move", {socketId: socket.id, move: args});
     })
 
     socket.on('shoot', () => {
-        if(!roomList[playerList[socket.id]]) return;
+        if(!playerList[socket.id].roomId) return;
         io.to(roomList[playerList[socket.id].roomId].masterId).emit('shoot', {socketId: socket.id})
     })
 
@@ -169,14 +184,13 @@ io.on('connection', async (socket) => {
     })
 
     socket.on('test', () => {
-        console.log("loop")
     })
 
     socket.on('disconnect', () => {
         if(masterList[socket.id]) {
-            io.to(masterList[socket.id]).emit('status', {type: 'error', message: 'The owner has left the room'});
-            delete roomList[masterList[socket.id]];
-            delete masterList[socket.id];
+            // io.to(masterList[socket.id]).emit('status', {type: 'error', message: 'The owner has left the room'});
+            // delete roomList[masterList[socket.id]];
+            // delete masterList[socket.id];
         } 
 
         if(playerList[socket.id]) {
