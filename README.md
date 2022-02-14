@@ -4,5 +4,5 @@
 ### `npm start` or `yarn start`
 Open [http://localhost:3000](http://localhost:8001) to view it in the browser.
 <p align="center">
-  <img width="550" src="http://hiepnguyen.site/img/soccer2.png"/>
+  <img width="550" src="https://res.cloudinary.com/uethehe/image/upload/v1644845931/soccer2_e4exs6.png"/>
 </p>
