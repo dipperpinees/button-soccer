@@ -169,9 +169,9 @@ io.on('connection', async (socket) => {
 
     socket.on('disconnect', () => {
         if(masterList[socket.id]) {
-            // io.to(masterList[socket.id]).emit('status', {type: 'error', message: 'The owner has left the room'});
-            // delete roomList[masterList[socket.id]];
-            // delete masterList[socket.id];
+            io.to(masterList[socket.id]).emit('status', {type: 'error', message: 'The owner has left the room'});
+            delete roomList[masterList[socket.id]];
+            delete masterList[socket.id];
         } 
 
         if(playerList[socket.id]) {
