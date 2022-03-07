@@ -69,7 +69,6 @@ app.get("/play/:roomId", (req, res) => {
 
 app.get("/join", (req, res) => {
     const {roomId} = req.query;
-
     res.render("join", {avatar: req.cookies.avatar, roomId: roomId});
 })
 
@@ -83,22 +82,6 @@ app.post("/avatar", upload.single('avatar'),  (req, res) => {
     // res.cookie("avatar", avatar);
     res.json({avatar: avatar});
 })
-
-// app.get("/tower", (req, res) => {
-//     res.render("tower/home")
-// })
-
-// app.get("/tower/game", (req, res) => {
-//     res.render("tower/game");
-// })
-
-// app.get("/tower/join", (req, res) => {
-//     res.render("tower/join");
-// })
-
-// app.get("/tower/remote", (req, res) => {
-//     res.render("tower/remote");
-// })
 
 //404 not found
 app.get('*', function(req, res){
@@ -133,8 +116,6 @@ io.on('connection', async (socket) => {
     }
 
     if(type === 'create') {
-        // const roomId = randomId().toString();
-        // roomList[ roomId] = {masterId: socket.id, playerList: [], countBlue: 0, countRed: 0, isPlayed: false};
         if(roomList[roomId]) {
             if(roomList[roomId].masterId) {
                 io.to(roomList[roomId].masterId).emit("create", "error");
