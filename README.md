@@ -1,4 +1,4 @@
-<a href="https://bs.hiepnguyen.site/">DEMO</a>
+<a href="https://bsoccer.herokuapp.com/">DEMO</a>
 
 ## How to start
 ### `npm start` or `yarn start`
